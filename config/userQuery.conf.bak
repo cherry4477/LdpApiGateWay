@@ -1,0 +1,42 @@
+[LOG]
+RANK =DEBUG
+FILE = userQuery.log
+PATH =./logs 
+MAXLINE = 100000
+
+[TRAFFICSTATISTICS]
+PATH = ./logs 
+FILE = status
+TIME = 60
+SSLPATH =/mnt/hgfs/asiainfo/cpp/BdxUserSearch/clientkey.pem
+SSLPASSWORD=passw0rd
+APIQPSLIMIT=24000
+
+[TRAFFICHIVELOG]
+PATH = ./logs 
+FILE = hive
+TIME = 60
+
+[REDISSERVER]
+IP = 0.0.0.0 
+PORT = 59001 
+IDX = 0
+NUMS =1
+
+
+[MYSQLSERVER]
+IP = 0.0.0.0 
+PORT = 3306 
+USERNAME = root
+PASSWORD = 123456
+DBNAME =ldp 
+
+[LOCALSERVER]
+IP = 0.0.0.0
+PORT = 8088 
+
+
+[WORKTHREADS]
+NUM =5 
+
+[QUERYAPIS]
