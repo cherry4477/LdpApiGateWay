@@ -100,7 +100,8 @@ void CUserQueryMain::UserQueryMainCore()
 
 
 	{
-		CUserQueryUpdate* pMonitorThread = new CUserQueryUpdate(m_stServerInfo.m_stTokenServer,m_stMysqlInfo);
+		//CUserQueryUpdate* pMonitorThread = new CUserQueryUpdate(m_stServerInfo.m_stTokenServer,m_stMysqlInfo);
+		CUserQueryUpdate* pMonitorThread = new CUserQueryUpdate(m_stServerInfo.m_stRedisServer,m_stMysqlInfo);
 		m_cThreads.SetRoutine(StartRoutine<CUserQueryUpdate>);
 		m_cThreads.CreateThead(pMonitorThread);
 	}

@@ -41,7 +41,7 @@ CUserQueryUpdate::CUserQueryUpdate(const IPPORT_S &stTokenServer,const MYSQL_SER
 	char chCount[10];
 	char chPort [10];
 	char chIdx  [10];
-    //m_pTokenRedis = new CDataAdapter;
+    m_pTokenRedis = new CDataAdapter;
     cTaskMonitorHuaWei = new CTaskMain;
     m_stMysqlServerInfo = new CMYSQL;
 	sprintf(chCount,"%d",stTokenServer.m_count);
@@ -57,7 +57,7 @@ CUserQueryUpdate::CUserQueryUpdate(const IPPORT_S &stTokenServer,const MYSQL_SER
 	sprintf(g_mySqlInfo.pchDbName,"%s",mySqlInfo.pchDbName);
 	
   	printf("Redis Server=%s\n",strServerList.c_str());
-	//m_pTokenRedis->Init(strServerList.c_str());
+	m_pTokenRedis->Init(strServerList.c_str());
   
 	printf("==============mysql info==============\n");
 	printf("%s\n",mySqlInfo.m_stMysqlLinkInfo.m_pchIp);
@@ -188,8 +188,12 @@ std::string CUserQueryUpdate::BdxGetDatafromDataHub(std::string AuthUser,std::st
 	char sslReadBuffer[_8KBLEN];
 	char tempBuffer[PACKET];
 	std::string strReadBuffer;
-	std::string datahubIP = "10.1.235.98";
-	uint16_t 	datahubPort = 443;
+	//std::string datahubIP = "10.1.235.98";
+	//uint16_t 	datahubPort = 443;
+	
+	std::string datahubIP = getenv("DATAHUB_IP");
+	uint16_t datahubPort = atoi(getenv("DATAHUB_PORT"));
+
 	CTcpSocket* sslLocalSocket; 	
 	sslLocalSocket=new CTcpSocket(datahubPort,datahubIP);
 	string strType;
@@ -203,7 +207,7 @@ std::string CUserQueryUpdate::BdxGetDatafromDataHub(std::string AuthUser,std::st
 	if( type == 2 )
 	{
 		strType ="get gateway token";
-		sprintf(m_httpReqVerifyToken,"GET /api/ HTTP/1.1\r\nHost: %s\r\nAuthorization: Basic Y2hlbnlnQGFzaWFpbmZvLmNvbToxYmJkODg2NDYwODI3MDE1ZTVkNjA1ZWQ0NDI1MjI1MQ==\r\n\r\n",datahubIP.c_str());
+		sprintf(m_httpReqVerifyToken,"GET /api/ HTTP/1.1\r\nHost: %s\r\nAuthorization: Basic YWRtaW5fY2hlbnlnQGFzaWFpbmZvLmNvbTo4ZGRjZmYzYTgwZjQxODljYTFjOWQ0ZDkwMmMzYzkwOQ==\r\n\r\n",datahubIP.c_str());
 	}
 	if( type == 3 )
 	{
@@ -459,6 +463,11 @@ void CUserQueryUpdate::Core()
 										ssmoidValue.clear();
 										ssmoidValue2.clear();
 										
+
+										printf("Line:%d,strAuthUser=%s,strRepo=%s\n",__LINE__,strAuthUser.c_str(),strRepo.c_str());
+										printf("Line:%d,strItem=%s,strSubid=%s\n",__LINE__,strItem.c_str(),strSubid.c_str());
+										printf("Line:%d,keyValue=%s\n",__LINE__,keyValue.c_str());
+
 		
 										updatedmember = strAuthUser+KEY_DELIMITER + strRepo+KEY_DELIMITER+strItem+KEY_DELIMITER+strSubid;
 										strUserOrderId =  strAuthUser +std::string(KEY_DELIMITER + startOrderID ); 
@@ -486,9 +495,7 @@ void CUserQueryUpdate::Core()
 											}
 											BdxApiUpdateUserOrder(strAuthUser,strSubid,strRepo,strItem,g_strDataHubToken,iCountOrderId);
 										}								
-										//printf("Line:%d,strAuthUser=%s,strRepo=%s\n",__LINE__,strAuthUser.c_str(),strRepo.c_str());
-										//printf("Line:%d,strItem=%s,strRepo=%s\n",__LINE__,strItem.c_str(),strSubid.c_str());
-										printf("Line:%d,keyValue=%s\n",__LINE__,keyValue.c_str());
+
 									}
 								}
 							}

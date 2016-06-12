@@ -387,7 +387,7 @@ int CTaskMain::BdxParseBody(char *pszBody, u_int uiBodyLen, BDXREQUEST_S& stRequ
 							m_pDataRedis->UserPutOrderSet(strUserOrderId,vecDataHubOrder[i].m_subscriptionID,vecDataHubOrder[i].m_subscriptionID);
 
 							valueUserRepoItemSubid = startUserRepoItemSubid + vecDataHubOrder[i].m_subscriptionID;
-							m_pDataRedis->UserSadd(needUpdateOrder,valueUserRepoItemSubid);
+							//m_pDataRedis->UserSadd(needUpdateOrder,valueUserRepoItemSubid);
 							printf("Line:%d,vecDataHubOrder[%d].m_subscriptionID=%s\n",__LINE__,i,vecDataHubOrder[i].m_subscriptionID.c_str());
 							strCountOrderId = strMidCountOrderId + vecDataHubOrder[i].m_subscriptionID;
 							strLimitOrderId = strMidLimitOrderId + vecDataHubOrder[i].m_subscriptionID;
@@ -661,11 +661,11 @@ std::string CTaskMain::BdxGetDatafromDataHub(std::string AuthUser,std::string Au
 	if( type == 2 )
 	{
 		strType ="get gateway token";
-		sprintf(m_httpReqVerifyToken,"GET /api/ HTTP/1.1\r\nHost: %s\r\nAuthorization: Basic Y2hlbnlnQGFzaWFpbmZvLmNvbToxYmJkODg2NDYwODI3MDE1ZTVkNjA1ZWQ0NDI1MjI1MQ==\r\n\r\n",datahubIP.c_str());
+		sprintf(m_httpReqVerifyToken,"GET /api/ HTTP/1.1\r\nHost: %s\r\nAuthorization: Basic YWRtaW5fY2hlbnlnQGFzaWFpbmZvLmNvbTo4ZGRjZmYzYTgwZjQxODljYTFjOWQ0ZDkwMmMzYzkwOQ==\r\n\r\n",datahubIP.c_str());
 	}
 	if( type == 3 )
 	{
-		strType ="get gateway token";
+		strType ="get order info";
 		sprintf(m_httpReqVerifyToken,"GET /api/subscriptions/pull/%s/%s?username=%s HTTP/1.1\r\nHost: %s\r\nAccept: application/json; charset=utf-8\r\nAuthorization: Token %s\r\n\r\n",repo.c_str(),item.c_str(),AuthUser.c_str(),datahubIP.c_str(),AuthToken.c_str());
 	}
 	if( type == 4 )
