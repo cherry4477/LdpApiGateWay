@@ -2,7 +2,9 @@
 
 
 sed -i 's/REDIS_SERVER_IP/'$REDIS_PORT_6379_TCP_ADDR'/g'  ./config/userQuery.conf 
-sed -i 's/REDIS_SERVER_PORT/'$REDIS_PORT_6379_TCP_PORT'/g'  ./config/userQuery.conf 
+sed -i 's/REDIS_SERVER_PORT/'$REDIS_PORT_6379_TCP_PORT'/g'  ./config/userQuery.conf
+sed -i 's/EXPOSE_PORT/8088/g'  ./config/userQuery.conf
+sed -i 's/THREAD_NUM/32/g'  ./config/userQuery.conf
 
 
 
