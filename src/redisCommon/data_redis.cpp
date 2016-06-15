@@ -82,6 +82,16 @@ bool CDataRedis::KeepConnect(uint32_t timeout) {
 		return false;
 	}
 	//test, connect redis_server
+	char *p = getenv("REDIS_PASSWORD");
+	std::string redisPass;
+	if(p!=NULL)
+	{
+		redisPass = std::string(p);
+	}
+	if(!redisPass.empty())
+	{
+		redisCommand(context_, "AUTH %s",redisPass.c_str());
+	}
 	redisReply *reply = (redisReply*)redisCommand(context_, "PING");
 	if (reply==NULL || reply->type == REDIS_REPLY_ERROR) {
 		if(reply) {

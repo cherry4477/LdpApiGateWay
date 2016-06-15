@@ -230,7 +230,9 @@ int CTaskMain::BdxParseBody(char *pszBody, u_int uiBodyLen, BDXREQUEST_S& stRequ
 	memset(bufTemp, 0, PACKET);
 
 	printf("Line:%d,m_pszAdxBuf=%s\n",__LINE__,m_pszAdxBuf);
+	
 	std::string ssContent = std::string(m_pszAdxBuf);
+	ssContent=url_decode(ssContent.c_str());
 	std::string tempssContent,strActionUrl,strReqParams;
 	unsigned int ipos = ssContent.find(CTRL_N,0);
 	unsigned int jpos = ssContent.find(REQ_TYPE,0);
@@ -275,6 +277,16 @@ int CTaskMain::BdxParseBody(char *pszBody, u_int uiBodyLen, BDXREQUEST_S& stRequ
 				    buf=NULL;  
 				}  
 				printf("Line:%d,strActionUrl=%s\n",__LINE__,strAction.c_str());
+
+				std::map<std::string,std::string>::iterator itss;
+
+				#if 0
+				for(itss = map_UserValueKey.begin();itss!=map_UserValueKey.end();itss++)
+				{
+					printf("Line:%d,%s %s\n",__LINE__,itss->first.c_str(),itss->second.c_str());
+
+				}
+				#endif
 		
 				if(map_UserValueKey.find(KEY_ACCESS_KEY_ID)!=map_UserValueKey.end()&&map_UserValueKey.find(KEY_REPOSITIRY)!=map_UserValueKey.end()&&map_UserValueKey.find(KEY_ITEM)!=map_UserValueKey.end()&&map_UserValueKey.find(KEY_SIGNATURE)!=map_UserValueKey.end())
 				{	
@@ -604,6 +616,7 @@ int CTaskMain::BdxParseBody(char *pszBody, u_int uiBodyLen, BDXREQUEST_S& stRequ
 		else
 		{
 			 errorMsg = "1100  request param is error";	// request param is error
+			 printf("line %d,s Error: %s\n",__LINE__,errorMsg.c_str());
 			 LOG(DEBUG,"errorMsg=%s",errorMsg.c_str());
 			 return OTHERERROR;
 		}
@@ -894,14 +907,13 @@ int  CTaskMain::BdxGetRemoteGateWayData(BDXAPIGATEWAYCONFIF_S stGataWayReqParam,
 	int uiBodyLen;
 	char* pszPacket = NULL;
 
-
 	printf("Line:%d,BdxGetRemoteGateWayData....\n",__LINE__);
 	memset(m_httpReq,0,sizeof(m_httpReq));
 
 	BdxGenerateReqUrl(stGataWayReqParam,m_httpReq);
 
 	printf("Line:%d,m_httpReq=%s\n",__LINE__,m_httpReq);
-	
+
 	remoteIp.assign(stGataWayReqParam.mStrHostInfo,0,stGataWayReqParam.mStrHostInfo.find(":",0));
 	remotePort = atoi(stGataWayReqParam.mStrHostInfo.substr(stGataWayReqParam.mStrHostInfo.find(":",0)+1).c_str());
 

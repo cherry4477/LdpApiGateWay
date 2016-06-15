@@ -10,6 +10,7 @@ sed -i 's/THREAD_NUM/32/g'  ./config/userQuery.conf
 
 export DATAHUB_IP=$DATAHUB_IP
 export DATAHUB_PORT=$DATAHUB_PORT
+export REDIS_PASSWORD=$REQUIRE_REDIS_PASS
 
 ./apigateway -c ./config/userQuery.conf -n query
 

@@ -74,7 +74,7 @@ CUserQueryUpdate::CUserQueryUpdate(const IPPORT_S &stTokenServer,const MYSQL_SER
 	printf("======================================\n");
 
 
-	//m_stMysqlServerInfo->InitMysql(mySqlInfo.m_stMysqlLinkInfo.m_pchIp,mySqlInfo.m_stMysqlLinkInfo.m_uiPort,mySqlInfo.pchUserName,mySqlInfo.pchPassWord,mySqlInfo.pchDbName);
+	m_stMysqlServerInfo->InitMysql(mySqlInfo.m_stMysqlLinkInfo.m_pchIp,mySqlInfo.m_stMysqlLinkInfo.m_uiPort,mySqlInfo.pchUserName,mySqlInfo.pchPassWord,mySqlInfo.pchDbName);
 
 }
 
@@ -118,6 +118,76 @@ void CUserQueryUpdate::GetMysqlFieldsUserInfo(std::string strUserInfo,BDXPERMISS
 					mVecFieldsUser.mIntQueryTimes =	atoi(temp[2]);
 					mVecFieldsUser.mIntGoodsTimes =	atoi(temp[3]);
 					mVecFieldsUser.mGoodsFields =	std::string(temp[4]);
+					std::vector<std::string>::iterator itr;
+					#if 0
+					for(itr=mVecFieldsUser.mVecFields.begin();itr!=mVecFieldsUser.mVecFields.end();itr++)
+					{
+						printf("=====%s\n",(*itr).c_str());
+					}
+					#endif
+
+
+}
+
+void CUserQueryUpdate::GetMysqlFieldsApiGateWayConfig(std::string strUserInfo,BDXAPIGATEWAYCONFIF_S &temp_MapApiGateWayconfig,std::string &mUserName) 
+
+{
+	char *buf;
+	int  index = 0;
+	std::string strParams;
+	char bufTemp[PACKET];
+	char *outer_ptr = NULL;  
+	char *inner_ptr = NULL;  
+	char *temp[PACKET]; 
+	
+	memset(temp,0,PACKET);
+	memset(bufTemp,0,PACKET);
+	temp_MapApiGateWayconfig.mStrReqParams.clear();
+					//printf("strUserInfo=%s\n",strUserInfo.c_str());
+					buf = const_cast<char*>(strUserInfo.c_str());
+					while((temp[index] = strtok_r(buf,";", &outer_ptr))!=NULL)   
+					{  	
+					    buf=temp[index];
+						//printf("Line:%d,index=%d,temp[%d]=%s\n",__LINE__,index,index,temp[index]);
+						#if 0
+						while((temp[index]=strtok_r(buf,"|", &inner_ptr))!=NULL)   
+					    {   
+					        printf("Line:%d,index=%d,temp[%d]=%s\n",__LINE__,index,index,temp[index]);
+					    	if(index >= 5)
+					        {
+					            temp_MapApiGateWayconfig.mStrReqParams.push_back(temp[index]);
+					        }					     	       					        
+					        index++;
+							printf("Line:%d,,,,,,,,,,\n",__LINE__);
+					        buf=NULL;  
+					    }
+						#endif
+						index++;
+					    buf=NULL;  
+					}  
+					
+					mUserName =	std::string(temp[0]);
+					temp_MapApiGateWayconfig.mStrCname =std::string(temp[1]);
+					temp_MapApiGateWayconfig.mStrUrlPath =	std::string(temp[2]);
+					temp_MapApiGateWayconfig.mStrHostInfo =	std::string(temp[3]);		
+					temp_MapApiGateWayconfig.mStrApiKey =	std::string(temp[5]);
+					temp_MapApiGateWayconfig.mIntIsVerify =	atoi(temp[6]);
+					temp_MapApiGateWayconfig.mIntIsHttps =	atoi(temp[7]);
+					temp_MapApiGateWayconfig.mIntQueryTimesLimit =	atol(temp[8]);
+
+
+					strParams = std::string(temp[4]);
+					//printf("Line:%d,strParams=%s\n",__LINE__,strParams.c_str());
+					index = 0;
+					buf = const_cast<char*>(strParams.c_str());
+					while((temp[index]=strtok_r(buf,"|", &inner_ptr))!=NULL)   
+					{	
+						//printf("Line:%d,index=%d,temp[%d]=%s\n",__LINE__,index,index,temp[index]);				
+						temp_MapApiGateWayconfig.mStrReqParams.push_back(temp[index]);																
+						index++;
+						buf=NULL;  
+					}
+					
 					std::vector<std::string>::iterator itr;
 					#if 0
 					for(itr=mVecFieldsUser.mVecFields.begin();itr!=mVecFieldsUser.mVecFields.end();itr++)
@@ -375,6 +445,69 @@ void CUserQueryUpdate::SwapMap(std::map<std::string,BDXPERMISSSION_S> &srcMap,st
 	
 }
 
+bool CUserQueryUpdate::MapGateWayConfigIsEqual(std::map<std::string,BDXAPIGATEWAYCONFIF_S> &srcMap,std::map<std::string,BDXAPIGATEWAYCONFIF_S> &destMap) 
+{
+	std::map<std::string,BDXAPIGATEWAYCONFIF_S>::iterator itrSrcMap;
+	std::map<std::string,BDXAPIGATEWAYCONFIF_S>::iterator itrDestMap;
+	std::vector<std::string>::iterator itr2;
+	if( srcMap.size() != destMap.size())
+	{
+		return false;
+	}
+	
+	for(itrSrcMap=srcMap.begin();itrSrcMap!=srcMap.end();itrSrcMap++)
+	{
+		itrDestMap = destMap.find(itrSrcMap->first);
+		if(itrDestMap !=destMap.end())
+		{
+				if(itrSrcMap->second.mStrHostInfo!=itrDestMap->second.mStrHostInfo||
+				itrSrcMap->second.mStrHostInfo!=itrDestMap->second.mStrHostInfo||
+				itrSrcMap->second.mStrCname!=itrDestMap->second.mStrCname||
+				itrSrcMap->second.mStrApiKey!=itrDestMap->second.mStrApiKey||
+				itrSrcMap->second.mIntIsHttps!=itrDestMap->second.mIntIsHttps||
+				itrSrcMap->second.mIntIsVerify!=itrDestMap->second.mIntIsVerify||
+				itrSrcMap->second.mIntQueryTimesLimit!=itrDestMap->second.mIntQueryTimesLimit)
+				//VectorIsEqual(itrSrcMap->second.mVecFields,)
+				{
+					return false;
+
+				}
+				
+
+		}
+		else
+		{
+			return false;
+		}
+
+	}
+return true;
+}
+
+void CUserQueryUpdate::SwapApiGateWayMap(std::map<std::string,BDXAPIGATEWAYCONFIF_S> &srcMap,std::map<std::string,BDXAPIGATEWAYCONFIF_S> &destMap) 
+{
+	std::map<std::string,BDXAPIGATEWAYCONFIF_S>::iterator itrSrcMap;
+	BDXAPIGATEWAYCONFIF_S mApiGateWayConfig;;
+	std::vector<std::string>::iterator itrSrcVector;
+
+	destMap.clear();
+	for(itrSrcMap=srcMap.begin();itrSrcMap!=srcMap.end();itrSrcMap++)
+	{
+		mApiGateWayConfig.mStrReqParams.clear();
+		mApiGateWayConfig.mStrReqParams 		= itrSrcMap->second.mStrReqParams;
+		mApiGateWayConfig.mStrHostInfo  		= itrSrcMap->second.mStrHostInfo;
+		mApiGateWayConfig.mStrCname   = itrSrcMap->second.mStrCname;
+		mApiGateWayConfig.mStrUrlPath   = itrSrcMap->second.mStrUrlPath;
+		mApiGateWayConfig.mStrApiKey   = itrSrcMap->second.mStrApiKey;
+		mApiGateWayConfig.mIntIsHttps   = itrSrcMap->second.mIntIsHttps;
+		mApiGateWayConfig.mIntIsVerify   = itrSrcMap->second.mIntIsVerify;
+		mApiGateWayConfig.mIntQueryTimesLimit   = itrSrcMap->second.mIntQueryTimesLimit;
+		
+		destMap.insert(std::pair<std::string,BDXAPIGATEWAYCONFIF_S>(itrSrcMap->first,mApiGateWayConfig));
+	}
+
+}
+
 void CUserQueryUpdate::Core()
 {
 
@@ -385,11 +518,15 @@ void CUserQueryUpdate::Core()
 	std::string sts="yd_zhejiang_mobile_token";
 	std::string strMysqlRecord;
 	const char *pchSqlPermissions = "select access_keyid,secret_privatekey,query_count,goods_count,goods_perm,permissions from dmp_user_permissions";
+	const char *pchSqlApiGateWayConfig = "select reqaction,reqresourcepage,urlpath,reqhostinfo,reqparams,reqappkey,isverify,ishttps,querytimes from api_gateway_config";
 	BDXPERMISSSION_S mUserInfoVecFields;
 	std::string strUserName;
 	int times = 0;
 	std::map<std::string,BDXPERMISSSION_S> temp_mapUserInfo;
 	BDXAPIGATEWAYCONFIF_S temp_MapApiGateWayconfig;
+	BDXAPIGATEWAYCONFIF_S mid_MapApiGateWayconfig;
+	std::map<std::string,BDXAPIGATEWAYCONFIF_S> temp_g_MapApiGateWayconfig;
+	
 
 
 	std::string tempCurrentDate;
@@ -424,7 +561,8 @@ void CUserQueryUpdate::Core()
 	
 	while(true)
 	{
-		times=1;	
+		//times=1;	
+		times=10;
 
 		tempCurrentDate = BdxUserGetCurrentDate();
 		if( tempCurrentDate.compare(g_strCurrentDate)!=0 )
@@ -506,9 +644,7 @@ void CUserQueryUpdate::Core()
 	  
 		while(times--)
 		{
-				temp_mapUserInfo.clear();
-				g_MapApiGateWayconfig.clear();
-
+				temp_g_MapApiGateWayconfig.clear();
 				#if 0
 				if(m_stMysqlServerInfo->GetMysqlInitState())
 				{
@@ -608,704 +744,108 @@ void CUserQueryUpdate::Core()
 
 
 				#endif
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/datayes/getThemeByTk?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("secID=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("secShortName=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("ticker=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("field=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("beginDate=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("endDate=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("exchangeCD=0");
-				g_MapApiGateWayconfig["ThemeByTk"] = temp_MapApiGateWayconfig;
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/datayes/getThemeInfo?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("isMain=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("themeID=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("themeName=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("themeSource=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("field=0");
-				g_MapApiGateWayconfig["ThemeInfo"] = temp_MapApiGateWayconfig;
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/datayes/getThemeHeat?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("isMain=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("themeID=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("themeName=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("beginDate=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("endDate=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("field=0");
-				g_MapApiGateWayconfig["ThemeHeat"] = temp_MapApiGateWayconfig;
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/datayes/getTkByTheme?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("isMain=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("themeID=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("themeName=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("beginDate=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("endDate=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("isNew=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("field=0");
-				g_MapApiGateWayconfig["TkByTheme"] = temp_MapApiGateWayconfig;
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/datayes/getThemeByNews?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("newsID=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("insertDate=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("beginTime=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("endTime=0");;
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("field=0");
-				g_MapApiGateWayconfig["ThemeByNews"] = temp_MapApiGateWayconfig;
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/datayes/getActiveTheme?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("date=1");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("field=0");
-				g_MapApiGateWayconfig["ActiveTheme"] = temp_MapApiGateWayconfig;
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/datayes/getNewsContent?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("newsID=1");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("field=0");
-				g_MapApiGateWayconfig["NewsContent"] = temp_MapApiGateWayconfig;
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/datayes/getNewsByTk?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("secID=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("secShortName=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("ticker=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("beginDate=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("endDate=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("exchangeCD=0"); 
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("field=0");	 
-				g_MapApiGateWayconfig["NewsByTk"] = temp_MapApiGateWayconfig;
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/datayes/getNewsByComp?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("partyID=1");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("beginDate=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("endDate=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("field=0");	 
-				g_MapApiGateWayconfig["NewsByComp"] = temp_MapApiGateWayconfig;
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/datayes/getSecID?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("partyID=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("ticker=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("assetClass=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("cnSpell=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("field=0");
-				g_MapApiGateWayconfig["SecID"] = temp_MapApiGateWayconfig;
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/datayes/getTradeCal?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("exchangeCD=1");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("beginDate=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("endDate=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("field=1");
-				g_MapApiGateWayconfig["TradeCal"] = temp_MapApiGateWayconfig;
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/datayes/getEquInfo?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("ticker=1");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("pagesize=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("pagenum=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("field=0");
-				g_MapApiGateWayconfig["EquInfo"] = temp_MapApiGateWayconfig;
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/haodai/blacklist_personal?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("name=1");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("idcard=1");
-				g_MapApiGateWayconfig["Blacklist"] = temp_MapApiGateWayconfig;
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/datayes/getFdmtEe?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("secID=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("beginDate=1");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("endDate=1");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("publishDateBegin=1");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("publishDateEnd=1");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("reportType=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("field=1");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("ticker=0");
-				g_MapApiGateWayconfig["FdmtEe"] = temp_MapApiGateWayconfig;
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/datayes/getFdmtEf?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("secID=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("beginDate=1");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("endDate=1");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("forecastType=1");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("publishDateBegin=1");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("publishDateEnd=1");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("reportType=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("field=1");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("ticker=0");
-				g_MapApiGateWayconfig["FdmtEf"] = temp_MapApiGateWayconfig;
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/KMA/CreditRank?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("comnumber=1");
-				g_MapApiGateWayconfig["CreditRank"] = temp_MapApiGateWayconfig;
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/datayes/getEqu?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("secID=0");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("ticker=1");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("equTypeCD=1");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("field=0");
-				g_MapApiGateWayconfig["Equ"] = temp_MapApiGateWayconfig;			
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/simplybrand/ProductQuery?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("Keyword=1");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("SiteId=0");
-				g_MapApiGateWayconfig["ProductQuery"] = temp_MapApiGateWayconfig;			
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/syntun/getCategories?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("access_key_id=1");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("live_time=1");	 
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("time_stamp=1");	 
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("signature=1");	 
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("search_word=0");	 
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("type=0"); 																									 
-				g_MapApiGateWayconfig["Categories"] = temp_MapApiGateWayconfig; 	
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/syntun/getHighCategories?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("access_key_id=1");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("live_time=1");	 
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("time_stamp=1");	 
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("signature=1");	 
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("search_word=0");	 
-				g_MapApiGateWayconfig["HighCategories"] = temp_MapApiGateWayconfig;
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/syntun/getSuperCategories?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("access_key_id=1");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("live_time=1");	 
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("time_stamp=1");	 
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("signature=1");	 
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("search_word=0");																										
-				g_MapApiGateWayconfig["SuperCategories"] = temp_MapApiGateWayconfig;	
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/syntun/getBrands?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("access_key_id=1");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("live_time=1");	 
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("time_stamp=1");	 
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("signature=1");	 
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("search_word=0");																										
-				g_MapApiGateWayconfig["Brands"] = temp_MapApiGateWayconfig; 	
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/syntun/getPlatforms?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("access_key_id=1");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("live_time=1");	 
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("time_stamp=1");	 
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("signature=1");	 
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("search_word=0");																										
-				g_MapApiGateWayconfig["Platforms"] = temp_MapApiGateWayconfig;	
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/syntun/getShops?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("access_key_id=1");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("live_time=1");	 
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("time_stamp=1");	 
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("signature=1");	 
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("search_word=0");	 
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("per=0");	   
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("page=0");  
-				g_MapApiGateWayconfig["Shops"] = temp_MapApiGateWayconfig;	
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/syntun/getSkus?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("access_key_id=1");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("live_time=1");	 
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("time_stamp=1");	 
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("signature=1");	 
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("search_word=0");	 
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("brand_id=0"); 	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("category_id=0");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("shop_id=0");	   
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("platform_id=0");
-				g_MapApiGateWayconfig["Skus"] = temp_MapApiGateWayconfig; 
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/syntun/getBrandCategory?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("access_key_id=1");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("live_time=1");	 
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("time_stamp=1");	 
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("signature=1");	 
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("search_word=0");	 
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("brand_id=0"); 	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("category_id=0");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("type=0"); 	
-				g_MapApiGateWayconfig["BrandCategory"] = temp_MapApiGateWayconfig; 
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/syntun/getSalesVolume?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("access_key_id=1");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("live_time=1");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("time_stamp=1");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("signature=1");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("category_id=1");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("platform_id=0");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("brand_id=0"); 	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("product_id=0");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("time_type=0");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("start_time=0");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("end_time=0"); 	
-				g_MapApiGateWayconfig["SalesVolume"] = temp_MapApiGateWayconfig; 
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/syntun/getSalesAmount?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("access_key_id=1");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("live_time=1");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("time_stamp=1");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("signature=1");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("category_id=1");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("platform_id=0");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("brand_id=0"); 	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("product_id=0");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("time_type=0");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("start_time=0");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("end_time=0"); 	
-				g_MapApiGateWayconfig["SalesAmount"] = temp_MapApiGateWayconfig;
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/syntun/getAveragePrice?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("access_key_id=1");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("live_time=1");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("time_stamp=1");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("signature=1");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("category_id=1");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("platform_id=0");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("brand_id=0"); 	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("product_id=0");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("time_type=0");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("start_time=0");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("end_time=0"); 	
-				g_MapApiGateWayconfig["AveragePrice"] = temp_MapApiGateWayconfig; 
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/syntun/getTop10Platforms?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("access_key_id=1");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("live_time=1");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("time_stamp=1");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("signature=1");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("category_id=1");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("platform_id=0");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("brand_id=0"); 	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("product_id=0");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("time_type=0");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("start_time=0");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("end_time=0"); 	
-				g_MapApiGateWayconfig["Top10Platforms"] = temp_MapApiGateWayconfig; 
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/syntun/getTop10Brands?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("access_key_id=1");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("live_time=1");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("time_stamp=1");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("signature=1");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("category_id=1");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("platform_id=1");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("brand_id=0"); 	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("product_id=0");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("time_type=0");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("start_time=0");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("end_time=0"); 	
-				g_MapApiGateWayconfig["Top10Brands"] = temp_MapApiGateWayconfig; 
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/syntun/getTop10Skus?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("access_key_id=1");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("live_time=1");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("time_stamp=1");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("signature=1");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("category_id=1");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("platform_id=0");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("brand_id=0"); 	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("product_id=0");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("time_type=0");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("start_time=0");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("end_time=0"); 	
-				g_MapApiGateWayconfig["Top10Skus"] = temp_MapApiGateWayconfig; 
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/pm25/cities?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("token=1");   
-				g_MapApiGateWayconfig["Cities"] = temp_MapApiGateWayconfig; 
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/pm25/stations?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("token=1");
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("city=1");
-				g_MapApiGateWayconfig["Stations"] = temp_MapApiGateWayconfig; 
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/pm25/aqi_by_station?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("token=1");  
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("station_code=1"); 
-				g_MapApiGateWayconfig["AqiStation"] = temp_MapApiGateWayconfig; 
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/pm25/aqi_by_city?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("token=1"); 
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("city=1");
-				g_MapApiGateWayconfig["Aqicity"] = temp_MapApiGateWayconfig; 
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "211.152.122.185:443";
-				temp_MapApiGateWayconfig.mStrCname = "way.jd.com";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/pm25/aqi_ranking?";
-				temp_MapApiGateWayconfig.mStrApiKey = "appkey=537e2e5f0c948d4a6cd88c097918feee";
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("token=1");   
-				g_MapApiGateWayconfig["Aqiranking"] = temp_MapApiGateWayconfig; 
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "115.182.0.203:443";
-				temp_MapApiGateWayconfig.mStrCname = "apis.juhe.cn";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/goodbook/catalog?";
-				temp_MapApiGateWayconfig.mStrApiKey = "key=ade09cde074729c00b07c35925da1ee7";						  
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("key=1");	 
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("dtype=0");																							  
-				g_MapApiGateWayconfig["Catalog"] = temp_MapApiGateWayconfig;	
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "115.182.0.203:443";
-				temp_MapApiGateWayconfig.mStrCname = "apis.juhe.cn";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/goodbook/query?";
-				temp_MapApiGateWayconfig.mStrApiKey = "key=ade09cde074729c00b07c35925da1ee7";						  
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("key=1");	 
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("catalog_id=1");	
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("pn=1");	   
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("rn=1");	  
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("dtype=0");					 
-				g_MapApiGateWayconfig["content"] = temp_MapApiGateWayconfig;	
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "115.182.0.157:443";
-				temp_MapApiGateWayconfig.mStrCname = "op.juhe.cn";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/onebox/train/query?";
-				temp_MapApiGateWayconfig.mStrApiKey = "key=945b843f2d163144a686646e2ef2d2b2";						  
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("train=1");   
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("key=1");																								
-				g_MapApiGateWayconfig["Train"] = temp_MapApiGateWayconfig; 
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "115.182.0.157:443";
-				temp_MapApiGateWayconfig.mStrCname = "op.juhe.cn";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/onebox/train/query_ab?";
-				temp_MapApiGateWayconfig.mStrApiKey = "key=945b843f2d163144a686646e2ef2d2b2";						  
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("from=1");   
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("to=1");  
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("key=1");																								
-				g_MapApiGateWayconfig["TrainSite"] = temp_MapApiGateWayconfig; 
-				
-				
-				temp_MapApiGateWayconfig.mStrReqParams.clear();
-				temp_MapApiGateWayconfig.mStrHostInfo = "115.182.0.157:443";
-				temp_MapApiGateWayconfig.mStrCname = "op.juhe.cn";
-				temp_MapApiGateWayconfig.mIntIsHttps = 1;
-				temp_MapApiGateWayconfig.mIntIsVerify = 1;
-				temp_MapApiGateWayconfig.mIntQueryTimesLimit = 100000000;
-				temp_MapApiGateWayconfig.mStrUrlPath = "/onebox/weather/query?";
-				temp_MapApiGateWayconfig.mStrApiKey = "key=d7f95f29b0111e73bd72eef056a1b2a5";						  
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("cityname=1");   
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("key=1");	 
-				temp_MapApiGateWayconfig.mStrReqParams.push_back("dtype=0");																							 
-				g_MapApiGateWayconfig["Weather"] = temp_MapApiGateWayconfig;		 
-																														
-																														
-																														
-																																																																																												
-				
 
 
+				if(m_stMysqlServerInfo->GetMysqlInitState())
+				{
+					if(m_stMysqlServerInfo->ExecuteMySql(pchSqlApiGateWayConfig))
+					{
 
+						if(m_stMysqlServerInfo->MysqlUseResult())
+						{	
+							//m_stMysqlServerInfo->DisplayHeader();
+							while(m_stMysqlServerInfo->MysqlFetchRow())
+							{			
+								//if(!first_row)
+								{	
+									strMysqlRecord = m_stMysqlServerInfo->GetColumnValue();
+									//printf("strMysqlRecord = %s\n",strMysqlRecord.c_str());
+									GetMysqlFieldsApiGateWayConfig(strMysqlRecord,mid_MapApiGateWayconfig,strUserName);
+									temp_g_MapApiGateWayconfig.insert(std::pair<std::string,BDXAPIGATEWAYCONFIF_S>(strUserName,mid_MapApiGateWayconfig));								}
+								//first_row = 0;
+							}
 
-
-
-
-				
+							std::map<std::string,BDXAPIGATEWAYCONFIF_S>::iterator itr;
+							std::vector<std::string>::iterator itr2;
+							#if 0
+							printf("=============================temp_mapUserInfo============================\n");
+							for(itr=temp_g_MapApiGateWayconfig.begin();itr!=temp_g_MapApiGateWayconfig.end();itr++)
+							{	
+								printf("action:          %s\n",itr->first.c_str());
+								printf("resourcepage:    %s\n",itr->second.mStrCname.c_str());
+								printf("urlpath:         %s\n",itr->second.mStrUrlPath.c_str());
+								printf("hostinfo:        %s\n",itr->second.mStrHostInfo.c_str());
+								printf("apikey:          %s\n",itr->second.mStrApiKey.c_str());
+								printf("isVerify:        %d\n",itr->second.mIntIsVerify);
+								printf("ishttps:         %d\n",itr->second.mIntIsHttps);
+								printf("querytimes:      %d\n",itr->second.mIntQueryTimesLimit);
 								
-				sleep(600);
+								printf("reqparams:       ");
+								for(itr2=itr->second.mStrReqParams.begin();itr2!=itr->second.mStrReqParams.end();itr2++)
+								{
+									printf("%s",(*itr2).c_str());
+									
+								}
+								printf("\n");
+								printf("=========================================================================\n");
+							}
+		    				#endif
+			
+							#if 1
+							printf("===================================================g_mapUserInfo==============================================\n");
+							for(itr=g_MapApiGateWayconfig.begin();itr!=g_MapApiGateWayconfig.end();itr++)
+							{	
+								printf("action: 		 %s\n",itr->first.c_str());
+								printf("resourcepage:	         %s\n",itr->second.mStrCname.c_str());
+								printf("urlpath:		 %s\n",itr->second.mStrUrlPath.c_str());
+								printf("hostinfo:		 %s\n",itr->second.mStrHostInfo.c_str());
+								printf("apikey: 		 %s\n",itr->second.mStrApiKey.c_str());
+								printf("isVerify:		 %d\n",itr->second.mIntIsVerify);
+								printf("ishttps:		 %d\n",itr->second.mIntIsHttps);
+								printf("querytimes: 	         %d\n",itr->second.mIntQueryTimesLimit);
+								
+								printf("reqparams:		 ");
+								for(itr2=itr->second.mStrReqParams.begin();itr2!=itr->second.mStrReqParams.end();itr2++)
+								{
+									printf("%s |",(*itr2).c_str());
+									
+								}
+								printf("\n");
+								printf("==============================================================================================================\n");
+							}
+							printf("\n\n\n\n\n\n\n\n\n\n\n");
+
+							#endif
+							if( !MapGateWayConfigIsEqual(temp_g_MapApiGateWayconfig,g_MapApiGateWayconfig) )
+							{
+								SwapApiGateWayMap(temp_g_MapApiGateWayconfig,g_MapApiGateWayconfig);
+								printf("\nswap map g_mapUserInfo\n\n");				
+							}
+
+						}
+						
+					}
+					else
+					{
+						m_stMysqlServerInfo->DestroyResultEnv();
+					}
+			}
+			else
+			{
+				printf("Line:%d,Reconnect mysql .....\n",__LINE__);
+
+				printf("==============reconnect mysql info==============\n");
+				printf("%s\n",g_mySqlInfo.m_stMysqlLinkInfo.m_pchIp);
+				printf("%d\n",g_mySqlInfo.m_stMysqlLinkInfo.m_uiPort);
+				printf("%s\n",g_mySqlInfo.pchUserName);
+				printf("%s\n",g_mySqlInfo.pchPassWord);
+				printf("%s\n",g_mySqlInfo.pchDbName);
+
+				m_stMysqlServerInfo->InitMysql(g_mySqlInfo.m_stMysqlLinkInfo.m_pchIp,g_mySqlInfo.m_stMysqlLinkInfo.m_uiPort,g_mySqlInfo.pchUserName,g_mySqlInfo.pchPassWord,g_mySqlInfo.pchDbName);
+			}
+			sleep(600);
 		}	
 	}
+ }
 
-}
 

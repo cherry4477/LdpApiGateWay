@@ -92,7 +92,9 @@
 
 
 #define KEY_MONTH "month"
-#define KEY_SIGNATURE "token"
+//#define KEY_SIGNATURE "token"
+#define KEY_SIGNATURE "appkey"
+
 
 #define KEY_TEL_NO "telNO"
 #define KEY_CERT_TYPE "certType"

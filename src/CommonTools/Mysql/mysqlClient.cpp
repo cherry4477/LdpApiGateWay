@@ -76,7 +76,7 @@ bool CMYSQL::ReInitMysql(const char *host, unsigned short port, const char *user
 bool CMYSQL::ExecuteMySql(const char *str)
 {
 	int res = 0;
-	printf("Line:%d,str=%s\n",__LINE__,str);
+	//printf("Line:%d,str=%s\n",__LINE__,str);
 	res = mysql_query(pmysqlConn,str);
 
 	//totalRecords = mysql_affected_rows(pmysqlConn);

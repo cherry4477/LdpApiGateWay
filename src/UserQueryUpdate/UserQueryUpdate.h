@@ -32,7 +32,9 @@ public:
 	bool MapIsEqual(std::map<std::string,BDXPERMISSSION_S> &srcMap,std::map<std::string,BDXPERMISSSION_S> &destMap);
 	void SwapMap(std::map<std::string,BDXPERMISSSION_S> &srcMap,std::map<std::string,BDXPERMISSSION_S> &destMap);
 	void GetMysqlFieldsUserInfo(std::string strUserInfo,BDXPERMISSSION_S &mVecFieldsUser,std::string &mUserName);
-
+	void GetMysqlFieldsApiGateWayConfig(std::string strUserInfo,BDXAPIGATEWAYCONFIF_S &temp_MapApiGateWayconfig,std::string &mUserName);
+	bool MapGateWayConfigIsEqual(std::map<std::string,BDXAPIGATEWAYCONFIF_S> &srcMap,std::map<std::string,BDXAPIGATEWAYCONFIF_S> &destMap);
+	void SwapApiGateWayMap(std::map<std::string,BDXAPIGATEWAYCONFIF_S> &srcMap,std::map<std::string,BDXAPIGATEWAYCONFIF_S> &destMap);
 	void Core();
 protected:
 
