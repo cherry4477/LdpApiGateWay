@@ -6,4 +6,5 @@ COPY . /src/myapp
 WORKDIR /src/myapp 
 RUN make clean && make 
 EXPOSE 8088 
+RUN chmod a+x ./start.sh
 CMD ./start.sh 
