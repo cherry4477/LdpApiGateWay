@@ -21,6 +21,7 @@
 #define	PACKET			1024
 #define _128BYTES			128
 #define _8KBLEN			8192
+#define _160KBLEN			8192*2*10
 #define _64KBLEN			64*1024
 
 #define SUCCESS 			0

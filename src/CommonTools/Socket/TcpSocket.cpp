@@ -428,7 +428,34 @@ bool CTcpSocket::TcpWrite(const void *pvSendBuf,size_t sizeSendLen)
 	if(!pvSendBuf || sizeSendLen <= 0) {//参数有误
 		return false;
 	}
-	if(::send(m_iSockfd, pvSendBuf, sizeSendLen,0) != (int)sizeSendLen) {//发送失败
+	
+	//if(::send(m_iSockfd, pvSendBuf, sizeSendLen,0) != (int)sizeSendLen) 
+	int totalsend = 0;
+	int flag = 1;
+	int alreadysend=::send(m_iSockfd, pvSendBuf, sizeSendLen,0);
+	if( alreadysend >  0 )
+	{
+		totalsend = alreadysend;
+	}
+	//printf("Line:%d,sizeSendLen=%d,totalsend =%d\n",__LINE__,sizeSendLen,totalsend );
+	while(totalsend < sizeSendLen   )
+	{
+		alreadysend= ::send(m_iSockfd, pvSendBuf + totalsend, sizeSendLen - totalsend,0);
+		if( alreadysend <= 0)
+		{
+			flag = 0;
+			continue;
+		}
+		else
+		{
+			totalsend+=alreadysend;
+		}
+	    
+		//printf("Line:%d,alreadysend=%d,sizeSendLen=%d,totalsend =%d\n",__LINE__,alreadysend,sizeSendLen,totalsend );
+	}
+	//printf("Line:%d,alreadysend=%d\n",__LINE__,alreadysend);
+	if(alreadysend != (int)sizeSendLen) 
+	{//发送失败
 		return false;
 	}
 	return true;
@@ -859,6 +886,7 @@ int CTcpSocket::TcpSslReadLen( void* buf, int nBytes)
 		
                 //switch(SSL_get_error(ssl,nread))
                 //printf("Line:%d,nread=%d,buf=%s\n",__LINE__,nread,buf);
+				//printf("Line:%d,nread=%d\n",__LINE__,nread);
 				//printf("Line:%d,SSL_ERROR_NONE= %d\n",__LINE__,SSL_ERROR_NONE);
 				//printf("Line:%d,SSL_ERROR_ZERO_RETURN= %d\n",__LINE__,SSL_ERROR_ZERO_RETURN);
 				//printf("Line:%d,SSL_ERROR_WANT_READ= %d\n",__LINE__,SSL_ERROR_WANT_READ);

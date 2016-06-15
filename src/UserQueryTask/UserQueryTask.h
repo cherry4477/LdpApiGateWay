@@ -59,7 +59,8 @@ protected:
 	BDXURLSUFFIX_S m_stSuffix;
 
 	char m_pszYunRequset[BUF_SIZE_64KB];
-	char m_pszAdxResponse[BUF_SIZE_64KB];
+	char m_pszAdxResponse[_160KBLEN];
+	//char m_pszAdxResponse[BUF_SIZE_64KB];
 	//char m_htmlBody[BUF_SIZE_64KB];
 };
 

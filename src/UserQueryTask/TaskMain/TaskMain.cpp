@@ -86,7 +86,7 @@ int CTaskMain::BdxRunTask(BDXREQUEST_S& stRequestInfo, BDXRESPONSE_S& stResponse
 	//printf("Line:%d,stResponseInfo=%s\n",__LINE__,stResponseInfo.mResValue.c_str());
 	if(iRes == SUCCESS )
 	{
-		//printf("Line:%d,stResponseInfo=%s\n",__LINE__,stResponseInfo.mResValue.c_str());
+		printf("Line:%d,stResponseInfo=%s\n",__LINE__,stResponseInfo.mResValue.c_str());
 		return BdxSendRespones( stRequestInfo, stResponseInfo,strErrorMsg);
 	}
 	else
@@ -892,7 +892,8 @@ void CTaskMain::BdxGenerateReqUrl(BDXAPIGATEWAYCONFIF_S stGataWayReqParam,char *
 
 int  CTaskMain::BdxGetRemoteGateWayData(BDXAPIGATEWAYCONFIF_S stGataWayReqParam, BDXREQUEST_S& stRequestInfo,BDXRESPONSE_S &stResponseInfo,std::string & errorMsg)
 {
-	char remoteBuffer[_8KBLEN];
+	//char remoteBuffer[_8KBLEN];
+	char remoteBuffer[_160KBLEN];
 	std::string strremoteBuffer;
 	CTcpSocket* remoteSocket;
 	std::string remoteIp;
@@ -968,6 +969,7 @@ int  CTaskMain::BdxGetRemoteGateWayData(BDXAPIGATEWAYCONFIF_S stGataWayReqParam,
 
 						pszBody = pszTmp + strlen(m_pszHttpHeaderEnd);
 						uiHeadLen = pszBody - remoteBuffer;
+						printf("Line:%d,uiHeadLen=%d\n",__LINE__,uiHeadLen);
 						pszTmp = strstr(pszPacket, "Content-Length:");
 						if(pszTmp == NULL) 
 						{
@@ -978,6 +980,7 @@ int  CTaskMain::BdxGetRemoteGateWayData(BDXAPIGATEWAYCONFIF_S stGataWayReqParam,
 							return OTHERERROR;
 						}
 						uiBodyLen = atoi(pszTmp + strlen("Content-Length:"));
+						
 						if(!uiBodyLen) 
 						{
 							remoteSocket->TcpSslDestroy();
@@ -986,11 +989,16 @@ int  CTaskMain::BdxGetRemoteGateWayData(BDXAPIGATEWAYCONFIF_S stGataWayReqParam,
 							return OTHERERROR;
 						
 						}
+						
 						while(uiBodyLen > uiReadLen - uiHeadLen) 
 						{
+							//printf("Line:%d,uiBodyLen=%d\n",__LINE__,uiBodyLen);
+							//printf("Line:%d,uiReadLen - uiHeadLen=%d\n",__LINE__,uiReadLen - uiHeadLen);
+							
 							iRes = remoteSocket->TcpSslReadLen(remoteBuffer + uiReadLen,uiBodyLen-(uiReadLen - uiHeadLen));
+							//printf("Line:%d,iRes=%d\n",__LINE__,iRes);
 							if(iRes <= 0){
-								remoteSocket->TcpClose();
+								//remoteSocket->TcpClose();
 								continue;
 						
 							}
@@ -1125,7 +1133,8 @@ int CTaskMain::BdxSendEmpyRespones(std::string errorMsg)
 
 int CTaskMain::BdxSendRespones(BDXREQUEST_S& stRequestInfo, BDXRESPONSE_S& stAdxRes,std::string errorMsg)
 {
-	memset(m_pszAdxResponse, 0, _64KBLEN);
+	//memset(m_pszAdxResponse, 0, _64KBLEN);
+	memset(m_pszAdxResponse, 0, _160KBLEN);
 	if( stAdxRes.mResValue.empty())
 	{		
 		std::string strOutput=errorMsg;
@@ -1144,7 +1153,7 @@ int CTaskMain::BdxSendRespones(BDXREQUEST_S& stRequestInfo, BDXRESPONSE_S& stAdx
 	int iBodyLength = strlen(m_pszAdxResponse);
 	iBodyLength=strlen(m_pszAdxResponse);
 
-
+	//printf("Line:%d,iBodyLength=%d,m_pszAdxResponse=%s\n",__LINE__,iBodyLength,m_pszAdxResponse);
 
 	if(!m_pclSock->TcpWrite(m_pszAdxResponse, iBodyLength)) 
 	{
