@@ -227,12 +227,14 @@ int CTaskMain::BdxParseBody(char *pszBody, u_int uiBodyLen, BDXREQUEST_S& stRequ
 	char *outer_ptr = NULL;  
 	char *inner_ptr = NULL;  
 
-	memset(bufTemp, 0, PACKET);
+	memset(bufTemp, '\0', PACKET);
 
 	printf("Line:%d,m_pszAdxBuf=%s\n",__LINE__,m_pszAdxBuf);
 	
 	std::string ssContent = std::string(m_pszAdxBuf);
 	ssContent=url_decode(ssContent.c_str());
+	//ssContent=url_encode(ssContent.c_str());
+	
 	std::string tempssContent,strActionUrl,strReqParams;
 	unsigned int ipos = ssContent.find(CTRL_N,0);
 	unsigned int jpos = ssContent.find(REQ_TYPE,0);
@@ -247,40 +249,44 @@ int CTaskMain::BdxParseBody(char *pszBody, u_int uiBodyLen, BDXREQUEST_S& stRequ
 		stHiveLog.strReqParams = ssContent;
 		
 		int ibegin = ssContent.find(SEC_Q,0);
-		int iend =   ssContent.find(BLANK,0);
+		int iend =   ssContent.rfind(BLANK,ssContent.length());
 		//int iend = ssContent.rfind(BLANK,ssContent.length());
 		strAction =  ssContent.substr(0,ssContent.find(SEC_Q,0)); //strActionUrl api name
 		strAction = strAction.substr(strAction.rfind("/",strAction.length())+1);
 
-		printf("Line:%d,ssContent=%s\n",__LINE__,ssContent.c_str());
+		//printf("Line:%d,ssContent=%s\n",__LINE__,ssContent.c_str());
 		
 		if (ibegin!=-1 && iend !=-1)
 		{
-				ssContent = ssContent.substr(ibegin+1,iend - ibegin-1);	
-				strReqParams = ssContent;
-				//retUser=strReqParams;
+				ssContent = ssContent.substr(ibegin+1,iend - ibegin-1);
+				printf("Line:%d,ssContent=%s\n",__LINE__,ssContent.c_str());
+				ssContent = BdxTaskMainReplace_All(ssContent," ","%20");
+				strReqParams = ssContent;	
 				memcpy(bufTemp,ssContent.c_str(),ssContent.length());
+				//sprintf(bufTemp,"%s",ssContent.c_str());
 				buf=bufTemp;
 				while((temp[index] = strtok_r(buf, STRING_AND, &outer_ptr))!=NULL)   
 				{  	
-				    buf=temp[index];  
+				    printf("Line:%d,temp[%d]=%s\n",__LINE__,index,temp[index]);
+				    buf=temp[index];
+					//printf("Line:%d,buf=%s\n",__LINE__,buf);
 				    while((temp[index]=strtok_r(buf, STRING_EQUAL, &inner_ptr))!=NULL)   
-				    {   if(index%2==1)
+				    {  
+						printf("Line:%d,temp[%d]=%s\n",__LINE__,index,temp[index]);
+						if(index%2==1)
 				        {
 				            map_UserValueKey[temp[index-1]]=temp[index];
-				            
-				            
 				        }
 				        index++;
 				        buf=NULL;  
-				    }  
+				    } 
 				    buf=NULL;  
 				}  
 				printf("Line:%d,strActionUrl=%s\n",__LINE__,strAction.c_str());
 
 				std::map<std::string,std::string>::iterator itss;
 
-				#if 0
+				#if 1
 				for(itss = map_UserValueKey.begin();itss!=map_UserValueKey.end();itss++)
 				{
 					printf("Line:%d,%s %s\n",__LINE__,itss->first.c_str(),itss->second.c_str());
@@ -946,7 +952,7 @@ int  CTaskMain::BdxGetRemoteGateWayData(BDXAPIGATEWAYCONFIF_S stGataWayReqParam,
 						printf("Line:%d,TcpSslWriteLen...\n",__LINE__);
 						memset(remoteBuffer,0,sizeof(remoteBuffer));
 						uiReadLen = remoteSocket->TcpSslReadLen(remoteBuffer,sizeof(remoteBuffer));
-						//printf("Line%d,remoteBuffer=%s\n",__LINE__,remoteBuffer);
+						printf("Line%d,remoteBuffer=%s\n",__LINE__,remoteBuffer);
 
 						pszPacket = remoteBuffer;
 						if(uiReadLen < 0 )
