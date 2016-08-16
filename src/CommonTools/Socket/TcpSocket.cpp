@@ -262,7 +262,7 @@ int CTcpSocket::TcpConnect(const in_port_t in_portPort, const std::string& strIp
 	//stTimeval.tv_sec = m_uiTimeout;
 	//stTimeval.tv_usec = 0;
 	
-	stTimeval.tv_sec = 1;
+	stTimeval.tv_sec = 10;
 	stTimeval.tv_usec = m_uiTimeout;
 	if (-1 == setsockopt(m_iSockfd, SOL_SOCKET, SO_SNDTIMEO, &stTimeval, sizeof(stTimeval))) {
 		return -1;
@@ -431,30 +431,40 @@ bool CTcpSocket::TcpWrite(const void *pvSendBuf,size_t sizeSendLen)
 	
 	//if(::send(m_iSockfd, pvSendBuf, sizeSendLen,0) != (int)sizeSendLen) 
 	int totalsend = 0;
-	int flag = 1;
+	int flagtimes = 0;
+	int totalTimes = 0;
 	int alreadysend=::send(m_iSockfd, pvSendBuf, sizeSendLen,0);
 	if( alreadysend >  0 )
 	{
 		totalsend = alreadysend;
 	}
-	//printf("Line:%d,sizeSendLen=%d,totalsend =%d\n",__LINE__,sizeSendLen,totalsend );
-	while(totalsend < sizeSendLen   )
+	printf("Line:%d,sizeSendLen=%d,totalsend =%d\n",__LINE__,sizeSendLen,totalsend );
+	while(totalsend < sizeSendLen  )
 	{
 		alreadysend= ::send(m_iSockfd, pvSendBuf + totalsend, sizeSendLen - totalsend,0);
+		if(flagtimes > 300000)// 300000 times is error then exit
+		{
+			break;
+		}
 		if( alreadysend <= 0)
 		{
-			flag = 0;
+			flagtimes++;
+			//printf("Line:%d,=====%d\n",__LINE__,alreadysend);
+			totalTimes++;
 			continue;
 		}
 		else
 		{
+			printf("Line:%d,flagtimes=%d\n",__LINE__,flagtimes);
+			flagtimes = 0;
 			totalsend+=alreadysend;
+			//printf("Line:%d,totalTimes=%d,totalsend=%d\n",__LINE__,totalTimes,totalsend);
 		}
 	    
 		//printf("Line:%d,alreadysend=%d,sizeSendLen=%d,totalsend =%d\n",__LINE__,alreadysend,sizeSendLen,totalsend );
 	}
-	//printf("Line:%d,alreadysend=%d\n",__LINE__,alreadysend);
-	if(alreadysend != (int)sizeSendLen) 
+	printf("Line:%d,totalsend=%d\n",__LINE__,totalsend);
+	if(totalsend != (int)sizeSendLen) 
 	{//发送失败
 		return false;
 	}
@@ -468,7 +478,7 @@ bool CTcpSocket:: TcpClose()
 	so_linger.l_onoff = true;
 	so_linger.l_linger = 0;
 	setsockopt(m_iSockfd,SOL_SOCKET,SO_LINGER,&so_linger,sizeof(so_linger));
-	//printf("m_bConnect=%d,m_iSockfd=%d\n",m_bConnect,m_iSockfd);
+	printf("Line:%d,m_bConnect=%d,m_iSockfd=%d\n",__LINE__,m_bConnect,m_iSockfd);
 	if(m_bConnect) {
 	//printf("before close socket %d\n",m_iSockfd);
 		if(m_iSockfd != -1)
@@ -478,7 +488,7 @@ bool CTcpSocket:: TcpClose()
 		}
 		m_bConnect = false;
 	}
-	//printf("after close socket %d\n",m_iSockfd);
+	printf("Line:%d,after close socket %d\n",__LINE__,m_iSockfd);
 	return true;
 }
 int CTcpSocket::EncodingBase64(char * pInput, char * pOutput)

@@ -31,6 +31,9 @@ private:
 	HIVELOCALLOG_S m_stHiveLog;
 	CMYSQL *m_stMysqlServerInfoHive;	
 	MYSQL_ROW mysqlRowHive;
+	std::string currentHour;
+	int m_RandomInt;
+
 
 };
 

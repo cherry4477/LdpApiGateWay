@@ -43,9 +43,10 @@ int InitSSLFlag = 0;
 
 static const string http=" HTTP/1.1";
 
-static const char http200ok[] = "HTTP/1.1 200 OK\r\nServer: Bdx DMP/0.1.0\r\nCache-Control: must-revalidate\r\nExpires: Thu, 01 Jan 1970 00:00:00 GMT\r\nPragma: no-cache\r\nConnection: Keep-Alive\r\nContent-Type: application/json;charset=UTF-8\r\nDate: ";
+static const char http200ok[] = "HTTP/1.1 200 OK\r\nServer: Bdx DMP/0.1.0\r\nAccess-Control-Allow-Origin: *\r\nCache-Control: must-revalidate\r\nExpires: Thu, 01 Jan 1970 00:00:00 GMT\r\nPragma: no-cache\r\nConnection: Keep-Alive\r\nContent-Type: application/json;charset=UTF-8\r\nDate: ";
 //static const char http200ok[] = "";
 static const char httpReq[]="GET %s HTTP/1.1\r\nHost: %s\r\nAccept-Encoding: identity\r\n\r\n";
+static const char httpReqPost[]="POST %s HTTP/1.1\r\nHost: %s\r\nAccept-Encoding: identity\r\nContent-Type: application/json;charset=utf-8\r\nContent-length:%d\r\n\r\n%s";
 
 
 #define __HTTPS__
@@ -67,6 +68,10 @@ CTaskMain::CTaskMain()
 
 CTaskMain::~CTaskMain() {
 	// TODO Auto-generated destructor stub
+	printf("Line:%d,~CTaskMain........\n",__LINE__);
+	//fix the bug,http packet is much too large at 20160705 
+	m_pclSock->TcpClose();
+
 
 }
 
@@ -86,7 +91,8 @@ int CTaskMain::BdxRunTask(BDXREQUEST_S& stRequestInfo, BDXRESPONSE_S& stResponse
 	//printf("Line:%d,stResponseInfo=%s\n",__LINE__,stResponseInfo.mResValue.c_str());
 	if(iRes == SUCCESS )
 	{
-		printf("Line:%d,stResponseInfo=%s\n",__LINE__,stResponseInfo.mResValue.c_str());
+		//printf("Line:%d,stResponseInfo=%s\n",__LINE__,stResponseInfo.mResValue.c_str());
+		printf("Line:%d,sending response\n",__LINE__);
 		return BdxSendRespones( stRequestInfo, stResponseInfo,strErrorMsg);
 	}
 	else
@@ -371,7 +377,7 @@ int CTaskMain::BdxParseBody(char *pszBody, u_int uiBodyLen, BDXREQUEST_S& stRequ
 						m_pDataRedis->UserPutExpire(strApiGateWayToken,strDataHubToken,3*3600); 				
 					}
 					g_strDataHubToken = strDataHubToken;
-					strUserOrderId =  strAccessKeyId +std::string(KEY_DELIMITER + startOrderID );
+					strUserOrderId =  strAccessKeyId +std::string(KEY_DELIMITER + startOrderID ) + KEY_DELIMITER + strRepo + KEY_DELIMITER+ strItem;
 
 					ssmoidValue = "";
 					startUserRepoItemSubid = strAccessKeyId + KEY_DELIMITER + strRepo + KEY_DELIMITER + strItem  + KEY_DELIMITER;
@@ -523,6 +529,8 @@ int CTaskMain::BdxParseBody(char *pszBody, u_int uiBodyLen, BDXREQUEST_S& stRequ
 					strGateWayconfig.mIntIsVerify 	=  itr->second.mIntIsVerify;
 					strGateWayconfig.mStrReqParams	=  itr->second.mStrReqParams;
 					strGateWayconfig.mIntQueryTimesLimit  =  itr->second.mIntQueryTimesLimit;
+					strGateWayconfig.mIntReqtype    =  itr->second.mIntReqtype;
+					strGateWayconfig.mStrPostTemplate  =  itr->second.mStrPostTemplate;
 
 
 					for(std::vector<std::string>::iterator itr2 = strGateWayconfig.mStrReqParams.begin();itr2!=strGateWayconfig.mStrReqParams.end();itr2++ )
@@ -666,6 +674,7 @@ std::string CTaskMain::BdxGetDatafromDataHub(std::string AuthUser,std::string Au
 
 	std::string datahubIP = getenv("DATAHUB_IP");
 	uint16_t datahubPort = atoi(getenv("DATAHUB_PORT"));
+	std::string datahubAdminAuth = getenv("ADMIN_AUTH");
 	
 	CTcpSocket* sslLocalSocket; 	
 	string strType;
@@ -680,7 +689,8 @@ std::string CTaskMain::BdxGetDatafromDataHub(std::string AuthUser,std::string Au
 	if( type == 2 )
 	{
 		strType ="get gateway token";
-		sprintf(m_httpReqVerifyToken,"GET /api/ HTTP/1.1\r\nHost: %s\r\nAuthorization: Basic YWRtaW5fY2hlbnlnQGFzaWFpbmZvLmNvbTo4ZGRjZmYzYTgwZjQxODljYTFjOWQ0ZDkwMmMzYzkwOQ==\r\n\r\n",datahubIP.c_str());
+		//sprintf(m_httpReqVerifyToken,"GET /api/ HTTP/1.1\r\nHost: %s\r\nAuthorization: Basic YWRtaW5fY2hlbnlnQGFzaWFpbmZvLmNvbTo4ZGRjZmYzYTgwZjQxODljYTFjOWQ0ZDkwMmMzYzkwOQ==\r\n\r\n",datahubIP.c_str());
+		sprintf(m_httpReqVerifyToken,"GET /api/ HTTP/1.1\r\nHost: %s\r\nAuthorization: Basic %s\r\n\r\n",datahubIP.c_str(),datahubAdminAuth.c_str());
 	}
 	if( type == 3 )
 	{
@@ -708,6 +718,8 @@ std::string CTaskMain::BdxGetDatafromDataHub(std::string AuthUser,std::string Au
 		//printf("Line:%d,m_httpReqVerifyToken=%s\n",__LINE__,m_httpReqVerifyToken);
 
 	}
+
+	printf("Line:%d,m_httpReqVerifyToken=%s\n",__LINE__,m_httpReqVerifyToken);
 
 	if(sslLocalSocket->TcpConnect()==0)
 	{
@@ -752,8 +764,13 @@ std::string CTaskMain::BdxGetDatafromDataHub(std::string AuthUser,std::string Au
 	
 			}
 		}
+		sslLocalSocket->TcpSslDestroy();
 	}
-	sslLocalSocket->TcpSslDestroy();
+	else
+	{
+		sslLocalSocket->TcpClose();
+	}
+	
 	return strReadBuffer;
 }
 
@@ -815,7 +832,6 @@ std::vector<DATAHUB_ORDER_INFO_S> CTaskMain::BdxApiGetUserOrder(std::string repo
 								
 								if(jValue[i]["phase"].toStyledString()=="1\n")
 								{
-
 									memset(tempSubid,0,50);
 									sprintf(tempSubid,"%ld",atol(jValue[i]["subscriptionid"].toStyledString().c_str()));
 									//dataHubInfo.m_subscriptionID= jValue[i]["subscriptionid"].toStyledString();
@@ -877,23 +893,52 @@ std::string CTaskMain::BdxApiUpdateUserOrder(std::string user,std::string subid,
 void CTaskMain::BdxGenerateReqUrl(BDXAPIGATEWAYCONFIF_S stGataWayReqParam,char *buffer)
 {
 	 std::string strReqUrl;
-	 
-	 for(std::vector<std::string>::iterator itr = stGataWayReqParam.mStrReqParams.begin();itr!=stGataWayReqParam.mStrReqParams.end();itr++ )
+	 std::string strReqPostParam;
+	 std::string strReqPostValue;
+	 std::string strReplaceParam;
+	 int lenPostReq;
+
+	 if( stGataWayReqParam.mIntReqtype == 1 )
 	 {
-		strReqUrl += (*itr)+ "&";
+		 for(std::vector<std::string>::iterator itr = stGataWayReqParam.mStrReqParams.begin();itr!=stGataWayReqParam.mStrReqParams.end();itr++ )
+		 {
+			strReqUrl += (*itr)+ "&";
+		 }
+		 if(stGataWayReqParam.mIntIsVerify == 1)
+		 {
+			strReqUrl = strReqUrl + stGataWayReqParam.mStrApiKey;
+			strReqUrl = stGataWayReqParam.mStrUrlPath + strReqUrl;
+		 }
+		 else
+		 {
+			strReqUrl = strReqUrl.substr(0,strReqUrl.length() -1);
+			strReqUrl = stGataWayReqParam.mStrUrlPath + strReqUrl;
+		 }
+		 printf("Line:%d,strReqUrl=%s\n",__LINE__,strReqUrl.c_str());
+		 sprintf(buffer,httpReq,strReqUrl.c_str(),stGataWayReqParam.mStrCname.c_str());
+
 	 }
-	 if(stGataWayReqParam.mIntIsVerify == 1)
+	 if( stGataWayReqParam.mIntReqtype == 2 )
 	 {
-		strReqUrl = strReqUrl + stGataWayReqParam.mStrApiKey;
-		strReqUrl = stGataWayReqParam.mStrUrlPath + strReqUrl;
+		printf("Line:%d,stGataWayReqParam.mStrPostTemplate=%s\n",__LINE__,stGataWayReqParam.mStrPostTemplate.c_str());
+		for(std::vector<std::string>::iterator itr = stGataWayReqParam.mStrReqParams.begin();itr!=stGataWayReqParam.mStrReqParams.end();itr++ )
+		{
+		   strReqPostParam = (*itr).substr(0,(*itr).find("=",0));
+		   strReqPostValue = (*itr).substr((*itr).find("=",0)+1);
+		   strReplaceParam = std::string("POSTREQ_") + strReqPostParam;
+
+		   stGataWayReqParam.mStrPostTemplate = BdxTaskMainReplace_All(stGataWayReqParam.mStrPostTemplate,strReplaceParam,strReqPostValue);
+		   printf("Line:%d,strReqPostParam=%s,strReqPostValue=%s\n",__LINE__,strReqPostParam.c_str(),strReqPostValue.c_str());
+		   
+		}
+		lenPostReq = stGataWayReqParam.mStrPostTemplate.length();
+		printf("Line:%d,stGataWayReqParam.mStrPostTemplate=%s\n",__LINE__,stGataWayReqParam.mStrPostTemplate.c_str());
+	 	sprintf(buffer,httpReqPost,stGataWayReqParam.mStrUrlPath.c_str(),stGataWayReqParam.mStrCname.c_str(),lenPostReq,stGataWayReqParam.mStrPostTemplate.c_str());
+		printf("Line:%d,buffer=%s\n",__LINE__,buffer);
+
 	 }
-	 else
-	 {
-		strReqUrl = strReqUrl.substr(0,strReqUrl.length() -1);
-		strReqUrl = stGataWayReqParam.mStrUrlPath + strReqUrl;
-	 }
-	 printf("Line:%d,strReqUrl=%s\n",__LINE__,strReqUrl.c_str());
-	 sprintf(buffer,httpReq,strReqUrl.c_str(),stGataWayReqParam.mStrCname.c_str());
+
+
 }
 
 int  CTaskMain::BdxGetRemoteGateWayData(BDXAPIGATEWAYCONFIF_S stGataWayReqParam, BDXREQUEST_S& stRequestInfo,BDXRESPONSE_S &stResponseInfo,std::string & errorMsg)
@@ -913,6 +958,7 @@ int  CTaskMain::BdxGetRemoteGateWayData(BDXAPIGATEWAYCONFIF_S stGataWayReqParam,
 	char* pszBody;
 	int uiBodyLen;
 	char* pszPacket = NULL;
+	bool bChunked = false;
 
 	printf("Line:%d,BdxGetRemoteGateWayData....\n",__LINE__);
 	memset(m_httpReq,0,sizeof(m_httpReq));
@@ -1032,8 +1078,13 @@ int  CTaskMain::BdxGetRemoteGateWayData(BDXAPIGATEWAYCONFIF_S stGataWayReqParam,
 					}
 				
 				}
+				remoteSocket->TcpSslDestroy();
 			}
-			remoteSocket->TcpSslDestroy();
+			else
+			{	
+				remoteSocket->TcpClose();
+			}
+			
 		}
 		else
 		{
@@ -1041,8 +1092,8 @@ int  CTaskMain::BdxGetRemoteGateWayData(BDXAPIGATEWAYCONFIF_S stGataWayReqParam,
 			{
 				memset(remoteBuffer,0,sizeof(remoteBuffer));
 				uiReadLen = remoteSocket->TcpRead(remoteBuffer,sizeof(remoteBuffer));
-				//printf("Line:%d,remoteBuffer=%s\n",__LINE__,remoteBuffer);
-				pszPacket = remoteBuffer;
+				printf("Line:%d,remoteBuffer=%s\n",__LINE__,remoteBuffer);
+				pszPacket = remoteBuffer;		
 				if(uiReadLen < 0 )
 				{
 					remoteSocket->TcpClose();
@@ -1065,41 +1116,106 @@ int  CTaskMain::BdxGetRemoteGateWayData(BDXAPIGATEWAYCONFIF_S stGataWayReqParam,
 				pszTmp = strstr(pszPacket, "Content-Length:");
 				if(pszTmp == NULL) 
 				{
+					bChunked = true;
+					#if 0
 					remoteSocket->TcpClose();
 					printf("Line:%d,33333333333333333333\n",__LINE__);
 					errorMsg = "2002 read socket is error";
 					LOG(DEBUG,"errorMsg=%s",errorMsg.c_str());
 					return OTHERERROR;
+					#endif
 				}
-				uiBodyLen = atoi(pszTmp + strlen("Content-Length:"));
-				if(!uiBodyLen) 
+				if(!bChunked)
 				{
-					remoteSocket->TcpClose();
-					errorMsg = "2002 read socket is error";
-					LOG(DEBUG,"errorMsg=%s",errorMsg.c_str());
-					return OTHERERROR;
-
-				}
-
-				while(uiBodyLen > uiReadLen - uiHeadLen) 
-				{
-					iRes = remoteSocket->TcpRead(remoteBuffer + uiReadLen,uiBodyLen-(uiReadLen - uiHeadLen));
-					//LOG(ERROR,"iRes	   **************=%d",iRes);
-					//printf("Line:%d,remoteBuffer=%s\n",__LINE__,remoteBuffer);
-					if(iRes <= 0){
+					uiBodyLen = atoi(pszTmp + strlen("Content-Length:"));
+					if(!uiBodyLen) 
+					{
 						remoteSocket->TcpClose();
-						continue;
+						errorMsg = "2002 read socket is error";
+						LOG(DEBUG,"errorMsg=%s",errorMsg.c_str());
+						return OTHERERROR;
+
+					}
+
+					while(uiBodyLen > uiReadLen - uiHeadLen) 
+					{
+						iRes = remoteSocket->TcpRead(remoteBuffer + uiReadLen,uiBodyLen-(uiReadLen - uiHeadLen));
+						//LOG(ERROR,"iRes	   **************=%d",iRes);
+						//printf("Line:%d,remoteBuffer=%s\n",__LINE__,remoteBuffer);
+						if(iRes <= 0){
+							remoteSocket->TcpClose();
+							continue;
+					
+						}
+						uiReadLen += iRes;
+					}	
+
+				}else
+				{
+						long lChunkLen = 0;
+						char* pszChunkHead;
+						pszChunkHead = pszTmp = pszBody;
+						int iTmpBodyLen = uiReadLen - uiHeadLen;
+						//printf("Line:%d,remoteBuffer=%s\n",__LINE__,remoteBuffer);
+						uiBodyLen = 0;
+						do {
+				
+							while(NULL == (pszTmp = strstr(pszTmp, m_pszHttpLineEnd))) {
+								if((iRes = remoteSocket->TcpRead(remoteBuffer + uiReadLen, sizeof(remoteBuffer) - uiReadLen)) <= 0){
+									LOG(ERROR, "[thread: %d]Get Http Body error.", m_uiThreadId);
+									return LINKERROR;
+								}
+								uiReadLen += iRes;
+							}
+				
+							pszTmp += strlen(m_pszHttpLineEnd);
+							iTmpBodyLen -= (pszTmp - pszChunkHead);
+							lChunkLen = strtol(pszChunkHead, NULL, 16);
+
+							printf("Line:%d,iTmpBodyLen=%d\n",__LINE__,iTmpBodyLen);
+							printf("Line:%d,lChunkLen=%d\n",__LINE__,lChunkLen);
+
+							while(lChunkLen > iTmpBodyLen) {
+								if((iRes = remoteSocket->TcpRead(remoteBuffer + uiReadLen, sizeof(remoteBuffer) - uiReadLen)) <= 0){
+									LOG(ERROR, "[thread: %d]Get Http Body error.", m_uiThreadId);
+									return LINKERROR;
+								}
+								uiReadLen += iRes;
+								iTmpBodyLen += iRes;
+							}
+							printf("Line:%d,remoteBuffer=%s\n",__LINE__,remoteBuffer);
+							memcpy(pszBody + uiBodyLen, pszTmp, lChunkLen);
+							uiBodyLen += lChunkLen;
+							pszChunkHead = (pszTmp + lChunkLen);
+							pszTmp = pszChunkHead;
+				
+						} while (lChunkLen > 0);
 				
 					}
-					uiReadLen += iRes;
-				}
-				if( strlen(remoteBuffer)>0 )
+				printf("Line:%d,remoteBuffer=%s\n",__LINE__,remoteBuffer);
+				if(!bChunked)
 				{
-					strremoteBuffer = std::string(remoteBuffer);
-					if(strremoteBuffer.find("\r\n\r\n")!=std::string::npos)
+					if( strlen(remoteBuffer)>0 )
 					{
-					  int lenStrTemp = strremoteBuffer.length();
-					  strremoteBuffer = strremoteBuffer.substr(strremoteBuffer.find("\r\n\r\n")+4,lenStrTemp -(strremoteBuffer.find("\r\n\r\n")+4));
+						strremoteBuffer = std::string(remoteBuffer);
+						if(strremoteBuffer.find("\r\n\r\n")!=std::string::npos)
+						{
+						  int lenStrTemp = strremoteBuffer.length();
+						  strremoteBuffer = strremoteBuffer.substr(strremoteBuffer.find("\r\n\r\n")+4,lenStrTemp -(strremoteBuffer.find("\r\n\r\n")+4));
+						}
+					}
+				}
+				else
+				{
+					if( strlen(remoteBuffer)>0 )
+					{
+						strremoteBuffer = std::string(remoteBuffer);
+						printf("strremoteBuffer=%s\n",strremoteBuffer.c_str());
+						if(strremoteBuffer.find("\r\n\r\n")!=std::string::npos)
+						{
+						  int lenStrTemp = strremoteBuffer.length();
+						  strremoteBuffer = strremoteBuffer.substr(strremoteBuffer.find("\r\n\r\n")+4,lenStrTemp -(strremoteBuffer.find("\r\n\r\n")+4)-10);
+						}
 					}
 				}
 			}
@@ -1110,6 +1226,7 @@ int  CTaskMain::BdxGetRemoteGateWayData(BDXAPIGATEWAYCONFIF_S stGataWayReqParam,
 	{
 		errorMsg = "2001 connect remote is error";
 		LOG(DEBUG,"errorMsg=%s",errorMsg.c_str());
+		remoteSocket->TcpClose();	
 		return OTHERERROR;
 	}
 	//printf("Line:%d,receive from  ReadBuffer=%s\n",__LINE__,strremoteBuffer.c_str());				
@@ -1161,6 +1278,7 @@ int CTaskMain::BdxSendRespones(BDXREQUEST_S& stRequestInfo, BDXRESPONSE_S& stAdx
 
 	//printf("Line:%d,iBodyLength=%d,m_pszAdxResponse=%s\n",__LINE__,iBodyLength,m_pszAdxResponse);
 
+	printf("Line:%d,m_pclSock->TcpGetSocket=%d\n",__LINE__,m_pclSock->TcpGetSockfd());
 	if(!m_pclSock->TcpWrite(m_pszAdxResponse, iBodyLength)) 
 	{
 		CUserQueryWorkThreads::m_vecReport[m_uiThreadId].m_strUserInfo[stAdxRes.ssUserName].m_ullEmptyResNum++;
@@ -1171,12 +1289,13 @@ int CTaskMain::BdxSendRespones(BDXREQUEST_S& stRequestInfo, BDXRESPONSE_S& stAdx
 
 		}
 		LOG(ERROR, "[thread: %d]write  response error.", m_uiThreadId);
+		printf("Line:%d,write  response error\n",__LINE__);
 		return LINKERROR;
 	}
+	printf("Line:%d,m_pclSock->TcpGetSocket=%d\n",__LINE__,m_pclSock->TcpGetSockfd());
+	//fix the bug,http packet is much too large at 20160705 
+	//m_pclSock->TcpClose();
 
-	//CUserQueryWorkThreads::m_vecReport[m_uiThreadId].m_strUserInfo[stAdxRes.ssUserName].m_ullResNum++;
-	//CUserQueryWorkThreads::m_vecReport[m_uiThreadId].m_strUserInfo[stAdxRes.ssUserName].m_ullTotalResNum++;
-	
 	if(stAdxRes.queryType==1)// 1 query user index ,2 query goods 
 	{
 		m_pDataRedis->UserIncr(stAdxRes.ssUserCountKeyRes);

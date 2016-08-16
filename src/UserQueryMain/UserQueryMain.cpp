@@ -79,7 +79,7 @@ void CUserQueryMain::UserQueryMainCore()
 
 #endif
 	{
-		CUserQueryCount* pCount = new CUserQueryCount(m_stStatisticsPrm);
+		CUserQueryCount* pCount = new CUserQueryCount(m_stStatisticsPrm,m_stMysqlInfo);
 		m_cThreads.SetRoutine(StartRoutine<CUserQueryCount>);
 		m_cThreads.CreateThead(pCount);
 	}

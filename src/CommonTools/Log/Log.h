@@ -24,6 +24,8 @@
 
 #define MAX_LOG_PATH 1024
 #define LOG(rank, format, args...) gp_log->write_d(rank, __FILE__, __LINE__, format, ##args)
+#define fmtprintf(format,args...) gp_log->LogMyprintf(__FILE__,__LINE__,format,##args)
+
 
 enum LOG_RANK{DEBUG, INFO, WARNING, ERROR, REQUIRED = 100};
 
@@ -58,6 +60,7 @@ public:
 	virtual ~CLog();
 
 	bool write_d(LOG_RANK rank, const char* file, const int line, const char* format, ...);
+	int  LogMyprintf(const char *file,const int line,char *fmt,...);
 	LOG_RANK LogGetLogRank();
 	void LogSetLogRank(LOG_RANK rank);
 	void LogPrintfLogRank();

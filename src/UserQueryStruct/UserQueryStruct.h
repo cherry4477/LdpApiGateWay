@@ -94,7 +94,10 @@
 
 #define KEY_MONTH "month"
 //#define KEY_SIGNATURE "token"
-#define KEY_SIGNATURE "appkey"
+//#define KEY_SIGNATURE "appkey"
+#define KEY_SIGNATURE "apitoken"
+
+
 
 
 #define KEY_TEL_NO "telNO"
@@ -129,7 +132,6 @@ typedef unsigned int		uint32_t;
 //log sev msg types
 #define LOG_TYPE_REQ 		1
 #define LOG_TYPE_RESP 		2
-
 
 typedef struct {
 	LOG_RANK m_Rank;
@@ -362,6 +364,8 @@ typedef struct ReqApiGateWayConfig
 	int mIntIsHttps;
 	int mIntIsVerify;
 	int mIntQueryTimesLimit;
+	int mIntReqtype;
+	std::string mStrPostTemplate;
 	
 }BDXAPIGATEWAYCONFIF_S;
 

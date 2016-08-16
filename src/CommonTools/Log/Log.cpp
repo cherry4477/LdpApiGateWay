@@ -47,7 +47,21 @@ CLog::~CLog()
 	pthread_cond_destroy(&m_Cond);
 	printf("========pthread_mutex_destroy======\n");
 }
-  
+
+int CLog::LogMyprintf(const char *file,const int line,char *fmt,...)
+{
+	std::string contents=getfulltime();
+	va_list apg_ptr; 
+	int cnt;
+	va_start(apg_ptr,fmt);
+	      printf("%s  File:%s#####Line:%d  ",contents.c_str(),file,line);
+	cnt = vprintf(fmt,apg_ptr);
+	      printf("\n");
+	va_end(apg_ptr);
+	return cnt;
+	
+}
+
 //write file directly
 bool CLog::write_d(LOG_RANK rank, const char* file, const int line, const char* format, ...)
 {

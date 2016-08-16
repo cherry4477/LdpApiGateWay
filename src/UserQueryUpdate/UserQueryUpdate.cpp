@@ -60,6 +60,7 @@ CUserQueryUpdate::CUserQueryUpdate(const IPPORT_S &stTokenServer,const MYSQL_SER
 	m_pTokenRedis->Init(strServerList.c_str());
   
 	printf("==============mysql info==============\n");
+	
 	printf("%s\n",mySqlInfo.m_stMysqlLinkInfo.m_pchIp);
 	printf("%d\n",mySqlInfo.m_stMysqlLinkInfo.m_uiPort);
 	printf("%s\n",mySqlInfo.pchUserName);
@@ -174,6 +175,8 @@ void CUserQueryUpdate::GetMysqlFieldsApiGateWayConfig(std::string strUserInfo,BD
 					temp_MapApiGateWayconfig.mIntIsVerify =	atoi(temp[6]);
 					temp_MapApiGateWayconfig.mIntIsHttps =	atoi(temp[7]);
 					temp_MapApiGateWayconfig.mIntQueryTimesLimit =	atol(temp[8]);
+					temp_MapApiGateWayconfig.mIntReqtype =	atoi(temp[9]);
+					temp_MapApiGateWayconfig.mStrPostTemplate =	std::string(temp[10]);
 
 
 					strParams = std::string(temp[4]);
@@ -210,7 +213,8 @@ std::string CUserQueryUpdate::BdxUserGetCurrentDate(const time_t ttime)
 	struct tm* timeinfo = localtime(&tmpTime);
 	char dt[20];
 	memset(dt, 0, 20);
-	sprintf(dt, "%4d%02d%02d", timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday);
+	//sprintf(dt, "%4d%02d%02d", timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday);
+	sprintf(dt, "%4d%02d%02d", timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday,timeinfo->tm_hour,timeinfo->tm_min);
 	//return (timeinfo->tm_year + 1900) * 10000 + (timeinfo->tm_mon + 1) * 100 + timeinfo->tm_mday;
 	return std::string(dt);
 }
@@ -348,8 +352,12 @@ std::string CUserQueryUpdate::BdxGetDatafromDataHub(std::string AuthUser,std::st
 	
 			}
 		}
+		sslLocalSocket->TcpSslDestroy();
 	}
-	sslLocalSocket->TcpSslDestroy();
+	else
+	{
+		sslLocalSocket->TcpClose();
+	}
 	return strReadBuffer;
 }
 
@@ -461,19 +469,19 @@ bool CUserQueryUpdate::MapGateWayConfigIsEqual(std::map<std::string,BDXAPIGATEWA
 		if(itrDestMap !=destMap.end())
 		{
 				if(itrSrcMap->second.mStrHostInfo!=itrDestMap->second.mStrHostInfo||
-				itrSrcMap->second.mStrHostInfo!=itrDestMap->second.mStrHostInfo||
+				itrSrcMap->second.mStrUrlPath!=itrDestMap->second.mStrUrlPath||
 				itrSrcMap->second.mStrCname!=itrDestMap->second.mStrCname||
 				itrSrcMap->second.mStrApiKey!=itrDestMap->second.mStrApiKey||
 				itrSrcMap->second.mIntIsHttps!=itrDestMap->second.mIntIsHttps||
 				itrSrcMap->second.mIntIsVerify!=itrDestMap->second.mIntIsVerify||
-				itrSrcMap->second.mIntQueryTimesLimit!=itrDestMap->second.mIntQueryTimesLimit)
+				itrSrcMap->second.mIntQueryTimesLimit!=itrDestMap->second.mIntQueryTimesLimit||
+				itrSrcMap->second.mIntReqtype!=itrDestMap->second.mIntReqtype||
+				itrSrcMap->second.mStrPostTemplate!=itrDestMap->second.mStrPostTemplate)
 				//VectorIsEqual(itrSrcMap->second.mVecFields,)
 				{
 					return false;
 
-				}
-				
-
+				}		
 		}
 		else
 		{
@@ -502,6 +510,9 @@ void CUserQueryUpdate::SwapApiGateWayMap(std::map<std::string,BDXAPIGATEWAYCONFI
 		mApiGateWayConfig.mIntIsHttps   = itrSrcMap->second.mIntIsHttps;
 		mApiGateWayConfig.mIntIsVerify   = itrSrcMap->second.mIntIsVerify;
 		mApiGateWayConfig.mIntQueryTimesLimit   = itrSrcMap->second.mIntQueryTimesLimit;
+		mApiGateWayConfig.mIntReqtype   = itrSrcMap->second.mIntReqtype;
+		mApiGateWayConfig.mStrPostTemplate   = itrSrcMap->second.mStrPostTemplate;
+
 		
 		destMap.insert(std::pair<std::string,BDXAPIGATEWAYCONFIF_S>(itrSrcMap->first,mApiGateWayConfig));
 	}
@@ -518,7 +529,7 @@ void CUserQueryUpdate::Core()
 	std::string sts="yd_zhejiang_mobile_token";
 	std::string strMysqlRecord;
 	const char *pchSqlPermissions = "select access_keyid,secret_privatekey,query_count,goods_count,goods_perm,permissions from dmp_user_permissions";
-	const char *pchSqlApiGateWayConfig = "select reqaction,reqresourcepage,urlpath,reqhostinfo,reqparams,reqappkey,isverify,ishttps,querytimes from api_gateway_config";
+	const char *pchSqlApiGateWayConfig = "select reqaction,reqresourcepage,urlpath,reqhostinfo,reqparams,reqappkey,isverify,ishttps,querytimes,reqtype,posttemplate from api_gateway_config";
 	BDXPERMISSSION_S mUserInfoVecFields;
 	std::string strUserName;
 	int times = 0;
@@ -791,7 +802,12 @@ void CUserQueryUpdate::Core()
 							}
 		    				#endif
 			
-							#if 1
+							if( !MapGateWayConfigIsEqual(temp_g_MapApiGateWayconfig,g_MapApiGateWayconfig) )
+							{
+								SwapApiGateWayMap(temp_g_MapApiGateWayconfig,g_MapApiGateWayconfig);
+								printf("\nswap map g_mapUserInfo\n\n");				
+							}
+							#if 0
 							printf("===================================================g_mapUserInfo==============================================\n");
 							for(itr=g_MapApiGateWayconfig.begin();itr!=g_MapApiGateWayconfig.end();itr++)
 							{	
@@ -803,6 +819,8 @@ void CUserQueryUpdate::Core()
 								printf("isVerify:		 %d\n",itr->second.mIntIsVerify);
 								printf("ishttps:		 %d\n",itr->second.mIntIsHttps);
 								printf("querytimes: 	         %d\n",itr->second.mIntQueryTimesLimit);
+								printf("reqtype: 	         	 %d\n",itr->second.mIntReqtype);
+								printf("posttemplate: 	         %s\n",itr->second.mStrPostTemplate.c_str());
 								
 								printf("reqparams:		 ");
 								for(itr2=itr->second.mStrReqParams.begin();itr2!=itr->second.mStrReqParams.end();itr2++)
@@ -814,13 +832,7 @@ void CUserQueryUpdate::Core()
 								printf("==============================================================================================================\n");
 							}
 							printf("\n\n\n\n\n\n\n\n\n\n\n");
-
 							#endif
-							if( !MapGateWayConfigIsEqual(temp_g_MapApiGateWayconfig,g_MapApiGateWayconfig) )
-							{
-								SwapApiGateWayMap(temp_g_MapApiGateWayconfig,g_MapApiGateWayconfig);
-								printf("\nswap map g_mapUserInfo\n\n");				
-							}
 
 						}
 						
@@ -843,7 +855,7 @@ void CUserQueryUpdate::Core()
 
 				m_stMysqlServerInfo->InitMysql(g_mySqlInfo.m_stMysqlLinkInfo.m_pchIp,g_mySqlInfo.m_stMysqlLinkInfo.m_uiPort,g_mySqlInfo.pchUserName,g_mySqlInfo.pchPassWord,g_mySqlInfo.pchDbName);
 			}
-			sleep(600);
+			sleep(6);
 		}	
 	}
  }
