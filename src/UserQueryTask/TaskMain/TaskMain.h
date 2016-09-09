@@ -59,6 +59,8 @@ private:
 	int m_httpType ;
 	CConf  mConf;	
 	std::map<std::string,std::string> m_mapUserValue;
+
+	std::string m_sRegion;
 	//CTime m_cTime;
 	
 

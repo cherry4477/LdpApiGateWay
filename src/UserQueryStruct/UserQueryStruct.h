@@ -96,6 +96,7 @@
 //#define KEY_SIGNATURE "token"
 //#define KEY_SIGNATURE "appkey"
 #define KEY_SIGNATURE "apitoken"
+#define KEY_SREGION "sregion"
 
 
 

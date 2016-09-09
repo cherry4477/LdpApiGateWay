@@ -215,6 +215,8 @@ int CTaskMain::BdxParseBody(char *pszBody, u_int uiBodyLen, BDXREQUEST_S& stRequ
 	int lenStrTemp,iLimitOrderId,iCountOrderId;
 	std::vector<DATAHUB_ORDER_INFO_S> vecDataHubOrder;
 
+    std::string strTokenRegion;
+
 	
 	//int lenStrTemp;
 	//struct tm ts;
@@ -281,7 +283,7 @@ int CTaskMain::BdxParseBody(char *pszBody, u_int uiBodyLen, BDXREQUEST_S& stRequ
 						printf("Line:%d,temp[%d]=%s\n",__LINE__,index,temp[index]);
 						if(index%2==1)
 				        {
-				            map_UserValueKey[temp[index-1]]=temp[index];
+				            map_UserValueKey[temp[index-1]]=url_encode(temp[index]);
 				        }
 				        index++;
 				        buf=NULL;  
@@ -332,8 +334,7 @@ int CTaskMain::BdxParseBody(char *pszBody, u_int uiBodyLen, BDXREQUEST_S& stRequ
 
 
 					strUserToken = strAccessKeyId +std::string(KEY_DELIMITER + startToken);
-
-
+					strTokenRegion = strSinature + std::string(KEY_DELIMITER) + std::string(KEY_SREGION);
 
 					printf("Line:%d,===========\n",__LINE__);
 
@@ -344,7 +345,19 @@ int CTaskMain::BdxParseBody(char *pszBody, u_int uiBodyLen, BDXREQUEST_S& stRequ
 						if (BdxVerifyDataHubToken(strAccessKeyId,strSinature)==1)
 						#endif
 						{	
-							m_pDataRedis->UserPutExpire(strUserToken,strSinature,3*3600);
+							if(false == m_pDataRedis->UserPutExpire(strUserToken,strSinature,3*3600))
+                            {
+                                errorMsg ="8008 set redis value error"; //user token is error
+								printf("line %d,s Error: %s, %s\n",__LINE__,errorMsg.c_str(), strUserToken.c_str());
+								return OTHERERROR;
+                            }
+                            
+                            if(false == m_pDataRedis->UserPutExpire(strTokenRegion, m_sRegion, 3*3600))
+                            {
+                                errorMsg ="8008 set redis value error"; //user token is error
+								printf("line %d,s Error: %s, %s\n",__LINE__,errorMsg.c_str(), strTokenRegion.c_str());
+								return OTHERERROR;
+                            }
 						}
 						else
 						{
@@ -354,6 +367,10 @@ int CTaskMain::BdxParseBody(char *pszBody, u_int uiBodyLen, BDXREQUEST_S& stRequ
 						}
 						//get local token,if verify is not ok,then get new token
 						//BdxGetNewDataHubToken(authUser,authToken);						
+					}
+					else{
+						m_pDataRedis->UserGet(strTokenRegion,m_sRegion);
+                        printf("line %d, m_sRegion: %s\n",__LINE__,m_sRegion.c_str());
 					}
 
 					strApiGateWayToken = apiGateWayAdmin +std::string(KEY_DELIMITER + startToken);
@@ -658,6 +675,20 @@ int CTaskMain::BdxVerifyDataHubToken(std::string AuthUser,std::string AuthToken)
 		if(retDataHub.find("\"msg\": \"OK\"")!=-1)
 		{
 			verifyOK = 1;
+
+            Json::Reader *jReader = new Json::Reader();
+			Json::Value jValue,jValueData;
+            if(jReader->parse(retDataHub,jValue))
+			{
+				if(jReader->parse(jValue["data"].toStyledString(), jValueData))
+                {
+                	m_sRegion = jValueData["sregion"].toStyledString();
+                	int iSecond = m_sRegion.find("\"", 1);
+                    m_sRegion = m_sRegion.substr(1, iSecond-1);
+                	printf("Line:%d,sregion=%s, lenth:%d, user=%s\n", __LINE__, m_sRegion.c_str(), m_sRegion.length(), AuthUser.c_str());
+                }
+            }
+            
 		}
 		return verifyOK;      
 }
@@ -683,7 +714,7 @@ std::string CTaskMain::BdxGetDatafromDataHub(std::string AuthUser,std::string Au
 	if( type == 1 )
 	{
 		strType ="verify user token";
-		sprintf(m_httpReqVerifyToken,"GET /api/valid HTTP/1.1\r\nHost: %s\r\nAuthorization:Token %s\r\nAuthuser: %s\r\n\r\n",datahubIP.c_str(),AuthToken.c_str(),AuthUser.c_str());
+		sprintf(m_httpReqVerifyToken,"GET /api/valid HTTP/1.1\r\nHost: %s\r\nAuthorization:Token %s\r\nAuthuser: %s\r\n\r\n",datahubIP.c_str(),AuthToken.c_str(),url_decode(AuthUser.c_str()).c_str());
 		//printf("Line:%d,BdxVerifyDataHubToken\n",__LINE__);
 	}
 	if( type == 2 )
@@ -695,13 +726,18 @@ std::string CTaskMain::BdxGetDatafromDataHub(std::string AuthUser,std::string Au
 	if( type == 3 )
 	{
 		strType ="get order info";
-		sprintf(m_httpReqVerifyToken,"GET /api/subscriptions/pull/%s/%s?username=%s HTTP/1.1\r\nHost: %s\r\nAccept: application/json; charset=utf-8\r\nAuthorization: Token %s\r\n\r\n",repo.c_str(),item.c_str(),AuthUser.c_str(),datahubIP.c_str(),AuthToken.c_str());
+
+        std::string username = m_sRegion + std::string("%2B") + AuthUser;
+        printf("username:%s\n", username.c_str());
+		sprintf(m_httpReqVerifyToken,"GET /api/subscriptions/pull/%s/%s?username=%s HTTP/1.1\r\nHost: %s\r\nAccept: application/json; charset=utf-8\r\nAuthorization: Token %s\r\n\r\n",repo.c_str(),item.c_str(),username.c_str(),datahubIP.c_str(),AuthToken.c_str());
+
 	}
 	if( type == 4 )
 	{
 		strType ="set_retrieved";
+        std::string username = m_sRegion + std::string("+") + url_decode(AuthUser.c_str()).c_str();
 		memset(tempBuffer,0,sizeof(tempBuffer));
-		sprintf(tempBuffer,"{\"action\":\"set_retrieved\",\"repname\":\"%s\",\"itemname\":\"%s\",\"username\":\"%s\"}",repo.c_str(),item.c_str(),AuthUser.c_str());
+		sprintf(tempBuffer,"{\"action\":\"set_retrieved\",\"repname\":\"%s\",\"itemname\":\"%s\",\"username\":\"%s\"}",repo.c_str(),item.c_str(),username.c_str());
 	    //std::string putValue = std::string(tempBuffer);
 		sprintf(m_httpReqVerifyToken,"PUT /api/subscription/%s HTTP/1.1\r\nHost: %s\r\nAuthorization: Token %s\r\nContent-Length: %d\r\nAccept: application/json; charset=utf-8\r\n\r\n%s",subid.c_str(),datahubIP.c_str(),AuthToken.c_str(),std::string(tempBuffer).length(),std::string(tempBuffer).c_str());
 		//printf("Line:%d,m_httpReqVerifyToken=%s\n",__LINE__,m_httpReqVerifyToken);
@@ -711,8 +747,9 @@ std::string CTaskMain::BdxGetDatafromDataHub(std::string AuthUser,std::string Au
 	if( type == 5 )
 	{
 		strType ="set_plan_used";
+        std::string username = m_sRegion + std::string("+") + url_decode(AuthUser.c_str()).c_str();
 		memset(tempBuffer,0,sizeof(tempBuffer));
-		sprintf(tempBuffer,"{\"action\":\"set_plan_used\",\"used\":%ld,\"repname\":\"%s\",\"itemname\":\"%s\",\"username\":\"%s\"}",used,repo.c_str(),item.c_str(),AuthUser.c_str());
+		sprintf(tempBuffer,"{\"action\":\"set_plan_used\",\"used\":%ld,\"repname\":\"%s\",\"itemname\":\"%s\",\"username\":\"%s\"}",used,repo.c_str(),item.c_str(),username.c_str());
 	    //std::string putValue = std::string(tempBuffer);
 		sprintf(m_httpReqVerifyToken,"PUT /api/subscription/%s HTTP/1.1\r\nHost: %s\r\nAuthorization: Token %s\r\nContent-Length: %d\r\nAccept: application/json; charset=utf-8\r\n\r\n%s",subid.c_str(),datahubIP.c_str(),AuthToken.c_str(),std::string(tempBuffer).length(),std::string(tempBuffer).c_str());
 		//printf("Line:%d,m_httpReqVerifyToken=%s\n",__LINE__,m_httpReqVerifyToken);
@@ -927,7 +964,7 @@ void CTaskMain::BdxGenerateReqUrl(BDXAPIGATEWAYCONFIF_S stGataWayReqParam,char *
 		   strReqPostValue = (*itr).substr((*itr).find("=",0)+1);
 		   strReplaceParam = std::string("POSTREQ_") + strReqPostParam;
 
-		   stGataWayReqParam.mStrPostTemplate = BdxTaskMainReplace_All(stGataWayReqParam.mStrPostTemplate,strReplaceParam,strReqPostValue);
+		   stGataWayReqParam.mStrPostTemplate = BdxTaskMainReplace_All(stGataWayReqParam.mStrPostTemplate,strReplaceParam, strReqPostValue);
 		   printf("Line:%d,strReqPostParam=%s,strReqPostValue=%s\n",__LINE__,strReqPostParam.c_str(),strReqPostValue.c_str());
 		   
 		}
@@ -1106,7 +1143,7 @@ int  CTaskMain::BdxGetRemoteGateWayData(BDXAPIGATEWAYCONFIF_S stGataWayReqParam,
 				if(pszTmp == NULL) 
 				{
 					remoteSocket->TcpClose();
-					printf("Line:%d,2222222222222222222222222222\n",__LINE__);
+					printf("Line:%d,2222222222222222222222222222\n, %s\n",__LINE__ , pszPacket);
 					errorMsg = "2002 read socket is error";
 					LOG(DEBUG,"errorMsg=%s",errorMsg.c_str());
 					return OTHERERROR;
