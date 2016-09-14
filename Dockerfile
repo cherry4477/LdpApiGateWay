@@ -5,6 +5,6 @@ RUN ln -snf /usr/share/zoneinfo/$TIME_ZONE /etc/localtime && echo $TIME_ZONE > /
 COPY . /src/myapp 
 WORKDIR /src/myapp 
 RUN make clean && make 
-EXPOSE 8088 
+EXPOSE 9091 
 RUN chmod a+x ./start.sh
 CMD ./start.sh 
