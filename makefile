@@ -35,7 +35,7 @@ LIBS :=  -lpthread -lssl -lcrypto -lrt -ldl -lm
 STATIC_LIBS:= ./lib/redis/libhiredis.a ./lib/json/libjson_linux-gcc-4.4.7_libmt.a ./lib/mysql/libmysqlclient.a ./lib/mysql/libmysqlservices.a
 
 #LIBPATH := -Lpath1 -Lpath2 -Lpath3
-LIBPATH := 
+LIBPATH :=
 INCLUDEPATH:=  -I/usr/inclde  -I./include/  -I./include/mysql -I./include/mysql/mysql -I./include/mysql/mysql/psi
 # INCLUDEPATH := -I/usr/lib/XXX/include
 
