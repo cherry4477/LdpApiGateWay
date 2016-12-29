@@ -13,7 +13,8 @@ MYSQL_SERVERINFO_S g_mySqlInfoHive;
 
 CUserQueryHiveLog::CUserQueryHiveLog(const STATISTICSPRM_S& stHiveLogPrm,const MYSQL_SERVERINFO_S &mySqlInfo )
  :m_stHiveLogPrm(stHiveLogPrm)
-{	
+{
+	
 	struct stat statbuf;
 	std::string strHiveLogDir;
 
@@ -67,11 +68,12 @@ void CUserQueryHiveLog::Core()
 	//char insertMysqlValue[2000];
 	std::string insertMysqlValue;
 	std::string createTable;
+	//10000000
 	std::string tableValue ="( id int(10) unsigned NOT NULL AUTO_INCREMENT ,\
 							log_time datetime DEFAULT NULL ,\
 							reqParams varchar(1000) DEFAULT NULL ,\
 							reqAction varchar(1000) DEFAULT NULL ,\
-							resultValue varchar(10000000) DEFAULT NULL ,\
+							resultValue varchar(20000) DEFAULT NULL ,\
 							queryTime bigint(20) DEFAULT NULL,\
 							log_dayID bigint(20) DEFAULT NULL ,\
 							log_HourID bigint(20) DEFAULT NULL ,\
@@ -241,8 +243,8 @@ void CUserQueryHiveLog::BdxQueryHiveLogWriteTitle()
 void CUserQueryHiveLog::BdxQueryHiveLogGetReport()
 {
 	//memset(&m_stReport.m_strUserInfo,0,sizeof(std::map<std::string,USERINFO_S>));
-	//memset(&m_stReport, 0, sizeof(UESRQUERYRPORT_S)); ½á¹¹ÌåÖÐÓÐmap 
-	// ²»ÐèÒª³õÊ¼»¯£¬·ñÔò»á³ö´í
+	//memset(&m_stReport, 0, sizeof(UESRQUERYRPORT_S)); ï¿½á¹¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½map 
+	// ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	//for(u_int i = 0; i < CUserQueryWorkThreads::m_vecHiveLog.size(); ++i) {
 		//m_stHiveLog += CUserQueryWorkThreads::m_vecHiveLog[i];
 		//CUserQueryWorkThreads::m_vecHiveLog[i] = 0;
