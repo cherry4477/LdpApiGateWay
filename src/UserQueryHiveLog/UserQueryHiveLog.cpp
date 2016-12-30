@@ -73,7 +73,7 @@ void CUserQueryHiveLog::Core()
 							log_time datetime DEFAULT NULL ,\
 							reqParams varchar(1000) DEFAULT NULL ,\
 							reqAction varchar(1000) DEFAULT NULL ,\
-							resultValue varchar(20000) DEFAULT NULL ,\
+							resultValue varchar(19800) DEFAULT NULL ,\
 							queryTime bigint(20) DEFAULT NULL,\
 							log_dayID bigint(20) DEFAULT NULL ,\
 							log_HourID bigint(20) DEFAULT NULL ,\
